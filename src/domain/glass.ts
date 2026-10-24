@@ -1,4 +1,8 @@
 import type { Coe, GlassItem, GlassKind, GlassType, QuantityUnit } from '../db/types.ts';
+import { parseAmount } from './numbers.ts';
+import { summarizeSizes, totalSheets, type SheetSize } from './sizes.ts';
+
+export { parseAmount };
 
 // Vocabulary and rules for glass inventory. Plain data and functions only,
 // so it can be tested without a phone.
@@ -70,7 +74,7 @@ export const UNIT_LABELS: Record<QuantityUnit, { one: string; many: string }> = 
 
 /** Units that make sense for each kind of glass, most common first. */
 export const UNITS_FOR_KIND: Record<GlassKind, QuantityUnit[]> = {
-  sheet: ['sheet', 'sq_in'],
+  sheet: ['sheet'],
   frit: ['oz', 'lb', 'g', 'jar'],
   powder: ['oz', 'lb', 'g', 'jar'],
   stringer: ['oz', 'piece'],
@@ -132,6 +136,9 @@ export type GlassInput = {
   coe: Coe | null;
   glass_type: GlassType | null;
   color_family: string | null;
+  /** Sheets only: the sizes on hand. When any are listed, the count comes from them. */
+  sizes: SheetSize[];
+  /** Used when sizes aren't tracked. */
   quantity: string;
   unit: QuantityUnit;
   cost: string;
@@ -143,7 +150,7 @@ export type GlassInput = {
 export type GlassFields = Omit<GlassItem, 'id' | 'created_at' | 'updated_at'>;
 
 export type ValidationResult =
-  | { ok: true; value: GlassFields }
+  | { ok: true; value: GlassFields; sizes: SheetSize[] }
   | { ok: false; errors: Partial<Record<keyof GlassInput, string>> };
 
 export function emptyGlassInput(kind: GlassKind = 'sheet', barcode = ''): GlassInput {
@@ -156,7 +163,8 @@ export function emptyGlassInput(kind: GlassKind = 'sheet', barcode = ''): GlassI
     coe: null,
     glass_type: null,
     color_family: null,
-    quantity: '1',
+    sizes: [],
+    quantity: kind === 'sheet' ? '' : '1',
     unit: UNITS_FOR_KIND[kind][0],
     cost: '',
     photo_uri: null,
@@ -165,7 +173,7 @@ export function emptyGlassInput(kind: GlassKind = 'sheet', barcode = ''): GlassI
   };
 }
 
-export function inputFromItem(item: GlassItem): GlassInput {
+export function inputFromItem(item: GlassItem, sizes: SheetSize[] = []): GlassInput {
   return {
     kind: item.kind,
     color_name: item.color_name,
@@ -175,7 +183,8 @@ export function inputFromItem(item: GlassItem): GlassInput {
     coe: item.coe,
     glass_type: item.glass_type,
     color_family: item.color_family,
-    quantity: String(item.quantity),
+    sizes,
+    quantity: sizes.length > 0 ? '' : String(item.quantity),
     unit: item.unit,
     cost: item.cost_per_unit_cents === null ? '' : (item.cost_per_unit_cents / 100).toFixed(2),
     photo_uri: item.photo_uri,
@@ -191,26 +200,22 @@ export function normalizeBarcode(code: string): string {
   return code.replace(/\s+/g, '');
 }
 
-/** Parses "1.5", "1 1/2", "1/2" or "3/4". Returns null if it isn't a number. */
-export function parseAmount(text: string): number | null {
-  const t = text.trim();
-  if (t === '') return null;
-  const mixed = t.match(/^(\d+)\s+(\d+)\/(\d+)$/);
-  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
-  const frac = t.match(/^(\d+)\/(\d+)$/);
-  if (frac) return Number(frac[1]) / Number(frac[2]);
-  const n = Number(t.replace(/,/g, ''));
-  return Number.isFinite(n) ? n : null;
-}
-
 /** Checks the form and turns it into database fields, or explains what to fix. */
 export function validateGlassInput(input: GlassInput): ValidationResult {
   const errors: Partial<Record<keyof GlassInput, string>> = {};
 
   if (input.color_name.trim() === '') errors.color_name = 'Enter a color name.';
 
-  const quantity = parseAmount(input.quantity);
-  if (quantity === null || quantity < 0) errors.quantity = 'Enter how much you have, like 1, 2.5 or 3/4.';
+  // Sheets listed by size get their count from the sizes; everything else needs an amount.
+  const sizes = input.kind === 'sheet' ? input.sizes.filter((s) => s.count > 0) : [];
+  const bySize = sizes.length > 0;
+  const quantity = bySize ? totalSheets(sizes) : parseAmount(input.quantity);
+  if (!bySize && (quantity === null || quantity < 0)) {
+    errors.quantity =
+      input.kind === 'sheet'
+        ? 'Add the sizes you have, or enter how many sheets.'
+        : 'Enter how much you have, like 1, 2.5 or 3/4.';
+  }
 
   if (FUSING_ONLY.includes(input.kind) && input.coe === null) {
     errors.coe = `Choose a COE. ${kindLabel(input.kind)} is used for fusing, so it matters.`;
@@ -237,11 +242,13 @@ export function validateGlassInput(input: GlassInput): ValidationResult {
       glass_type: input.kind === 'sheet' || input.kind === 'scrap' ? input.glass_type : null,
       color_family: input.color_family,
       quantity: quantity as number,
-      unit: input.unit,
+      unit: bySize ? 'sheet' : input.unit,
+      size_summary: bySize ? summarizeSizes(sizes) : null,
       cost_per_unit_cents: costCents,
       photo_uri: input.photo_uri,
       fired_photo_uri: input.fired_photo_uri,
       notes: blankToNull(input.notes),
     },
+    sizes,
   };
 }

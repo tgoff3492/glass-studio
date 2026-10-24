@@ -120,7 +120,7 @@ export default function GlassScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search color, maker or code"
+            placeholder="Search color, maker, code or size"
             placeholderTextColor={c.muted}
             style={[styles.searchInput, { color: c.text }]}
             accessibilityLabel="Search glass"
@@ -190,6 +190,11 @@ function GlassRow({ item }: { item: GlassItem }) {
               {maker}
             </Text>
           )}
+          {item.size_summary && (
+            <Text style={[styles.rowSizes, { color: c.text }]} numberOfLines={2}>
+              {item.size_summary}
+            </Text>
+          )}
           <View style={styles.badges}>
             <CoeBadge coe={item.coe} />
             <Text style={[styles.kind, { color: c.muted }]}>{kindLabel(item.kind)}</Text>
@@ -243,6 +248,7 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 3, minWidth: 0 },
   rowTitle: { fontSize: type.body, fontWeight: '700' },
   rowSub: { fontSize: type.label },
+  rowSizes: { fontSize: type.label, fontWeight: '600', fontVariant: ['tabular-nums'] },
   badges: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: 2 },
   kind: { fontSize: type.small, fontWeight: '600' },
   qty: { fontSize: type.label, fontWeight: '700', textAlign: 'right', maxWidth: 110, fontVariant: ['tabular-nums'] },

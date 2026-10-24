@@ -33,6 +33,7 @@ Arrows mean "needs data from."
 - Photo per sheet, plus a "how it looks fired" photo for fused glass
 - Search and filter by color family, manufacturer, COE and type
 - Barcode scanning: a known label opens its glass; a new one can be added or linked
+- Sheets counted by size (3 × 12×12, 4 × 6×12) with per-size +/− and search by size
 
 ## Phase 2 · Supplies & shopping — built
 - Stained: copper foil (by width), solder (60/40, 50/50, lead-free), lead came, flux, patina, grinder bits, cutter oil

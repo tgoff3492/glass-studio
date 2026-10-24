@@ -1,6 +1,7 @@
 import { normalizeBarcode, type GlassFields } from '../domain/glass.ts';
+import { normalizeSize, normalizeSizeSearch, summarizeSizes, totalSheets, type SheetSize } from '../domain/sizes.ts';
 import { newId, nowIso } from './ids.ts';
-import type { Coe, GlassItem, GlassKind } from './types.ts';
+import type { Coe, GlassItem, GlassKind, GlassPiece } from './types.ts';
 
 type Bind = string | number | null;
 
@@ -29,6 +30,7 @@ const COLUMNS = [
   'color_family',
   'quantity',
   'unit',
+  'size_summary',
   'cost_per_unit_cents',
   'photo_uri',
   'fired_photo_uri',
@@ -42,12 +44,14 @@ export async function listGlass(db: QueryDb, filter: GlassFilter = {}): Promise<
   const search = filter.search?.trim();
   if (search) {
     // Every word must match somewhere, so "blue bull" finds Bullseye blues.
-    for (const word of search.split(/\s+/)) {
+    // Search across a size too, so "12x12 blue" finds blue glass with 12×12 sheets.
+    for (const raw of search.split(/\s+/)) {
+      const word = normalizeSizeSearch(raw);
       where.push(
-        "(color_name LIKE ? ESCAPE '\\' OR manufacturer LIKE ? ESCAPE '\\' OR product_code LIKE ? ESCAPE '\\' OR barcode LIKE ? ESCAPE '\\' OR notes LIKE ? ESCAPE '\\')",
+        "(color_name LIKE ? ESCAPE '\\' OR manufacturer LIKE ? ESCAPE '\\' OR product_code LIKE ? ESCAPE '\\' OR barcode LIKE ? ESCAPE '\\' OR size_summary LIKE ? ESCAPE '\\' OR notes LIKE ? ESCAPE '\\')",
       );
       const like = `%${word.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-      params.push(like, like, like, like, like);
+      params.push(like, like, like, like, like, like);
     }
   }
   if (filter.kind) {
@@ -76,7 +80,7 @@ export function getGlass(db: QueryDb, id: string): Promise<GlassItem | null> {
   return db.getFirstAsync<GlassItem>('SELECT * FROM glass_items WHERE id = ?', [id]);
 }
 
-export async function createGlass(db: QueryDb, fields: GlassFields): Promise<string> {
+export async function createGlass(db: QueryDb, fields: GlassFields, sizes: SheetSize[] = []): Promise<string> {
   const id = newId();
   const now = nowIso();
   const cols = ['id', ...COLUMNS, 'created_at', 'updated_at'];
@@ -84,14 +88,64 @@ export async function createGlass(db: QueryDb, fields: GlassFields): Promise<str
     `INSERT INTO glass_items (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
     [id, ...COLUMNS.map((c) => fields[c]), now, now],
   );
+  if (sizes.length > 0) await replacePieces(db, id, sizes);
   return id;
 }
 
-export async function updateGlass(db: QueryDb, id: string, fields: GlassFields): Promise<void> {
+/** Saves the form. Pass `sizes` to replace the size list; leave it out to keep sizes as they are. */
+export async function updateGlass(db: QueryDb, id: string, fields: GlassFields, sizes?: SheetSize[]): Promise<void> {
   await db.runAsync(
     `UPDATE glass_items SET ${COLUMNS.map((c) => `${c} = ?`).join(', ')}, updated_at = ? WHERE id = ?`,
     [...COLUMNS.map((c) => fields[c]), nowIso(), id],
   );
+  if (sizes !== undefined) await replacePieces(db, id, sizes);
+}
+
+async function replacePieces(db: QueryDb, glassId: string, sizes: SheetSize[]): Promise<void> {
+  await db.runAsync('DELETE FROM glass_pieces WHERE glass_item_id = ?', [glassId]);
+  for (const s of sizes) {
+    const [w, h] = normalizeSize(s.width, s.height);
+    await db.runAsync(
+      `INSERT INTO glass_pieces (id, glass_item_id, width_in, height_in, count) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (glass_item_id, width_in, height_in) DO UPDATE SET count = count + excluded.count`,
+      [newId(), glassId, w, h, Math.max(0, Math.round(s.count))],
+    );
+  }
+}
+
+/** The sizes listed for a glass, largest first. Includes sizes she has run out of. */
+export async function listGlassSizes(db: QueryDb, glassId: string): Promise<SheetSize[]> {
+  const rows = await db.getAllAsync<GlassPiece>(
+    'SELECT * FROM glass_pieces WHERE glass_item_id = ? ORDER BY width_in * height_in DESC, width_in ASC',
+    [glassId],
+  );
+  return rows.map((r) => ({ width: r.width_in, height: r.height_in, count: r.count }));
+}
+
+/**
+ * Adds or uses sheets of one size, then brings the glass's total and summary up to date.
+ * Returns the new size list.
+ */
+export async function changeGlassSize(
+  db: QueryDb,
+  glassId: string,
+  width: number,
+  height: number,
+  delta: number,
+): Promise<SheetSize[]> {
+  const [w, h] = normalizeSize(width, height);
+  await db.runAsync(
+    `INSERT INTO glass_pieces (id, glass_item_id, width_in, height_in, count) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT (glass_item_id, width_in, height_in) DO UPDATE SET count = MAX(0, count + ?)`,
+    [newId(), glassId, w, h, Math.max(0, delta), delta],
+  );
+  const sizes = await listGlassSizes(db, glassId);
+  const summary = summarizeSizes(sizes);
+  await db.runAsync(
+    "UPDATE glass_items SET quantity = ?, unit = 'sheet', size_summary = ?, updated_at = ? WHERE id = ?",
+    [totalSheets(sizes), summary === '' ? null : summary, nowIso(), glassId],
+  );
+  return sizes;
 }
 
 /** Sets a new quantity, never below zero. Returns what was saved. */
@@ -112,6 +166,7 @@ export async function deleteGlass(db: QueryDb, id: string): Promise<DeleteResult
   if (used && used.n > 0) return { deleted: false, usedInProjects: used.n };
   await db.runAsync("DELETE FROM shopping_items WHERE source_type = 'glass' AND source_id = ?", [id]);
   await db.runAsync("DELETE FROM photos WHERE owner_type = 'glass' AND owner_id = ?", [id]);
+  await db.runAsync('DELETE FROM glass_pieces WHERE glass_item_id = ?', [id]);
   await db.runAsync('DELETE FROM glass_items WHERE id = ?', [id]);
   return { deleted: true };
 }

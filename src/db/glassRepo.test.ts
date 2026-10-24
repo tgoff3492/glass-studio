@@ -4,12 +4,14 @@ import { test } from 'node:test';
 
 import { emptyGlassInput, validateGlassInput, type GlassInput } from '../domain/glass.ts';
 import {
+  changeGlassSize,
   createGlass,
   deleteGlass,
   findGlassByCode,
   getGlass,
   glassWithBarcode,
   linkBarcode,
+  listGlassSizes,
   listGlass,
   listManufacturers,
   setGlassQuantity,
@@ -122,5 +124,66 @@ test('a barcode can only belong to one item', async () => {
   if (!r.linked) assert.equal(r.usedBy.id, ids.amber);
   assert.equal((await glassWithBarcode(db, '111', ids.amber)), null);
   assert.equal((await glassWithBarcode(db, '111'))?.id, ids.amber);
-  await assert.rejects(createGlass(db, fields({ color_name: 'Copy', barcode: '111' })));
+  await assert.rejects(createGlass(db, fields({ color_name: 'Copy', barcode: '111', quantity: '1' })));
+});
+
+test('saves sheet sizes and keeps the total in step', async () => {
+  const { db } = await openTestDb();
+  const r = validateGlassInput({
+    ...emptyGlassInput('sheet'),
+    color_name: 'Cobalt Blue',
+    sizes: [
+      { width: 12, height: 12, count: 3 },
+      { width: 12, height: 6, count: 4 },
+    ],
+  });
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  const id = await createGlass(db, r.value, r.sizes);
+  let item = await getGlass(db, id);
+  assert.equal(item?.quantity, 7);
+  assert.equal(item?.size_summary, '3 × 12×12 · 4 × 6×12');
+  assert.deepEqual(await listGlassSizes(db, id), [
+    { width: 12, height: 12, count: 3 },
+    { width: 6, height: 12, count: 4 },
+  ]);
+
+  // Cut one 12×12 into two 6×12s.
+  await changeGlassSize(db, id, 12, 12, -1);
+  const sizes = await changeGlassSize(db, id, 6, 12, 2);
+  assert.deepEqual(sizes.map((s) => s.count), [2, 6]);
+  item = await getGlass(db, id);
+  assert.equal(item?.quantity, 8);
+  assert.equal(item?.size_summary, '2 × 12×12 · 6 × 6×12');
+
+  // A brand-new size from the detail page.
+  await changeGlassSize(db, id, 6, 6, 1);
+  assert.equal((await getGlass(db, id))?.quantity, 9);
+
+  // Using more than she has stops at zero.
+  await changeGlassSize(db, id, 6, 6, -3);
+  assert.equal((await listGlassSizes(db, id)).find((s) => s.width === 6 && s.height === 6)?.count, 0);
+
+  assert.deepEqual((await listGlass(db, { search: '12x12 cobalt' })).map((g) => g.id), [id]);
+  assert.equal((await listGlass(db, { search: '24x24' })).length, 0);
+});
+
+test('editing replaces the size list; switching to a plain count clears it', async () => {
+  const { db } = await openTestDb();
+  const first = validateGlassInput({ ...emptyGlassInput('sheet'), color_name: 'Amber', sizes: [{ width: 12, height: 12, count: 2 }] });
+  assert.ok(first.ok);
+  if (!first.ok) return;
+  const id = await createGlass(db, first.value, first.sizes);
+
+  const counted = validateGlassInput({ ...emptyGlassInput('sheet'), color_name: 'Amber', quantity: '5' });
+  assert.ok(counted.ok);
+  if (!counted.ok) return;
+  await updateGlass(db, id, counted.value, counted.sizes);
+  assert.deepEqual(await listGlassSizes(db, id), []);
+  const item = await getGlass(db, id);
+  assert.equal(item?.quantity, 5);
+  assert.equal(item?.size_summary, null);
+
+  assert.deepEqual(await deleteGlass(db, id), { deleted: true });
+  assert.deepEqual(await listGlassSizes(db, id), []);
 });

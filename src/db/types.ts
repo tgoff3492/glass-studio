@@ -42,14 +42,26 @@ export type GlassItem = {
   coe: Coe | null;
   glass_type: GlassType | null;
   color_family: string | null;
+  /** For sheets tracked by size, the total sheet count across sizes. */
   quantity: number;
   unit: QuantityUnit;
+  /** "3 × 12×12 · 4 × 6×12" for sheets tracked by size; null otherwise. Kept in step with glass_pieces. */
+  size_summary: string | null;
   cost_per_unit_cents: number | null;
   photo_uri: string | null;
   fired_photo_uri: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/** How many sheets of one size she has of a glass. Sizes are inches, shorter side first. */
+export type GlassPiece = {
+  id: string;
+  glass_item_id: string;
+  width_in: number;
+  height_in: number;
+  count: number;
 };
 
 export type SupplyCategory =

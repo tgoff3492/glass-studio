@@ -148,6 +148,21 @@ CREATE INDEX shopping_items_source ON shopping_items (source_type, source_id);
 CREATE INDEX supplies_category ON supplies (category);
 `,
   },
+  {
+    // Sheet sizes: "3 12×12s and 4 6×12s". One row per size per glass.
+    version: 4,
+    sql: `
+CREATE TABLE glass_pieces (
+  id TEXT PRIMARY KEY NOT NULL,
+  glass_item_id TEXT NOT NULL REFERENCES glass_items (id) ON DELETE CASCADE,
+  width_in REAL NOT NULL CHECK (width_in > 0),
+  height_in REAL NOT NULL CHECK (height_in >= width_in),
+  count INTEGER NOT NULL DEFAULT 0 CHECK (count >= 0),
+  UNIQUE (glass_item_id, width_in, height_in)
+);
+ALTER TABLE glass_items ADD COLUMN size_summary TEXT;
+`,
+  },
 ];
 
 export const LATEST_VERSION = migrations[migrations.length - 1].version;

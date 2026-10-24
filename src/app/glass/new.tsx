@@ -18,8 +18,8 @@ export default function NewGlassScreen() {
     <GlassForm
       initial={initial}
       submitLabel="Add to inventory"
-      onSubmit={async (fields) => {
-        const id = await createGlass(db, fields);
+      onSubmit={async (fields, sizes) => {
+        const id = await createGlass(db, fields, sizes);
         router.replace({ pathname: '/glass/[id]', params: { id } });
       }}
       onCancel={(current) => {

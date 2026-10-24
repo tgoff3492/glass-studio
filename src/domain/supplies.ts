@@ -1,5 +1,6 @@
 import type { QuantityUnit, Supply, SupplyCategory } from '../db/types.ts';
-import { parseAmount, UNIT_LABELS } from './glass.ts';
+import { UNIT_LABELS } from './glass.ts';
+import { parseAmount } from './numbers.ts';
 
 export type SupplyGroup = 'stained' | 'fusing' | 'general';
 

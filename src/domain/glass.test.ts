@@ -35,7 +35,7 @@ test('frit needs a COE, stained sheet glass does not', () => {
   assert.equal(frit.ok, false);
   if (!frit.ok) assert.match(frit.errors.coe ?? '', /COE/);
 
-  const sheet = validateGlassInput({ ...emptyGlassInput('sheet'), color_name: 'Kokomo Ruby' });
+  const sheet = validateGlassInput({ ...emptyGlassInput('sheet'), color_name: 'Kokomo Ruby', quantity: '1' });
   assert.equal(sheet.ok, true);
 });
 
@@ -66,7 +66,7 @@ test('rejects a nonsense price', () => {
 });
 
 test('round-trips an item through the form', () => {
-  const r = validateGlassInput({ ...emptyGlassInput(), color_name: 'Clear', coe: 90, cost: '12.5' });
+  const r = validateGlassInput({ ...emptyGlassInput(), color_name: 'Clear', coe: 90, cost: '12.5', quantity: '1' });
   assert.ok(r.ok);
   if (!r.ok) return;
   const item = { ...r.value, id: 'x', created_at: '', updated_at: '' };

@@ -5,6 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { PhotoSlot } from '@/components/glass/PhotoSlot';
+import { SizesEditor } from '@/components/glass/SizeRows';
 import { Button, Chip, ChipRow, Column, Field, Label } from '@/components/ui';
 import { glassWithBarcode, listManufacturers } from '@/db/glassRepo';
 import type { Coe, GlassKind } from '@/db/types';
@@ -20,6 +21,7 @@ import {
   type GlassFields,
   type GlassInput,
 } from '@/domain/glass';
+import type { SheetSize } from '@/domain/sizes';
 import { space, type, useColors } from '@/theme/theme';
 
 type Props = {
@@ -27,7 +29,7 @@ type Props = {
   /** The item being edited, so its own barcode isn't reported as a duplicate. */
   itemId?: string;
   submitLabel: string;
-  onSubmit: (fields: GlassFields) => Promise<void>;
+  onSubmit: (fields: GlassFields, sizes: SheetSize[]) => Promise<void>;
   /** Called with what was on screen, so the caller can clean up photos taken but not saved. */
   onCancel: (current: GlassInput) => void;
 };
@@ -54,7 +56,9 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
 
   const set = <K extends keyof GlassInput>(key: K, value: GlassInput[K]) => {
     setInput((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
+    // Sizes and the plain count answer the same question, so either one clears its error.
+    const clears: (keyof GlassInput)[] = key === 'sizes' ? ['sizes', 'quantity'] : [key];
+    if (clears.some((k) => errors[k])) setErrors((prev) => ({ ...prev, ...Object.fromEntries(clears.map((k) => [k, undefined])) }));
   };
 
   const setKind = (kind: GlassKind) => {
@@ -90,7 +94,7 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
           return;
         }
       }
-      await onSubmit(result.value);
+      await onSubmit(result.value, result.sizes);
     } finally {
       setSaving(false);
     }
@@ -98,7 +102,7 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
 
   const errorCount = Object.values(errors).filter(Boolean).length;
   const showsType = input.kind === 'sheet' || input.kind === 'scrap';
-  const unitWord = UNIT_LABELS[input.unit].one;
+  const unitWord = UNIT_LABELS[input.kind === 'sheet' ? 'sheet' : input.unit].one;
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -211,22 +215,42 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
             </ChipRow>
           </View>
 
-          <View style={styles.group}>
-            <Field
-              label="How much do you have?"
-              hint="Fractions work too, like 1/2 or 1 1/4."
-              value={input.quantity}
-              onChangeText={(t) => set('quantity', t)}
-              error={errors.quantity}
-              keyboardType="decimal-pad"
-              selectTextOnFocus
-            />
-            <ChipRow>
-              {UNITS_FOR_KIND[input.kind].map((u) => (
-                <Chip key={u} label={UNIT_LABELS[u].many} selected={input.unit === u} onPress={() => set('unit', u)} />
-              ))}
-            </ChipRow>
-          </View>
+          {input.kind === 'sheet' ? (
+            <View style={styles.group}>
+              <SizesEditor
+                sizes={input.sizes}
+                onChange={(next) => set('sizes', next)}
+                error={input.sizes.some((x) => x.count > 0) ? undefined : errors.quantity}
+              />
+              {!input.sizes.some((x) => x.count > 0) && (
+                <Field
+                  label="Or just how many sheets"
+                  hint="Use this if you'd rather not track sizes."
+                  placeholder="Number of sheets"
+                  value={input.quantity}
+                  onChangeText={(t) => set('quantity', t)}
+                  keyboardType="decimal-pad"
+                />
+              )}
+            </View>
+          ) : (
+            <View style={styles.group}>
+              <Field
+                label="How much do you have?"
+                hint="Fractions work too, like 1/2 or 1 1/4."
+                value={input.quantity}
+                onChangeText={(t) => set('quantity', t)}
+                error={errors.quantity}
+                keyboardType="decimal-pad"
+                selectTextOnFocus
+              />
+              <ChipRow>
+                {UNITS_FOR_KIND[input.kind].map((u) => (
+                  <Chip key={u} label={UNIT_LABELS[u].many} selected={input.unit === u} onPress={() => set('unit', u)} />
+                ))}
+              </ChipRow>
+            </View>
+          )}
 
           <Field
             label={`Price paid per ${unitWord}`}

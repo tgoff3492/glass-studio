@@ -7,12 +7,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoeBadge } from '@/components/glass/CoeBadge';
 import { GlassThumb } from '@/components/glass/GlassThumb';
+import { AddSize, SizeRow, SizeTotals } from '@/components/glass/SizeRows';
 import { QuantityCard } from '@/components/QuantityCard';
 import { ShoppingButton } from '@/components/ShoppingButton';
 import { Button, Column } from '@/components/ui';
-import { deleteGlass, getGlass, setGlassQuantity } from '@/db/glassRepo';
+import { changeGlassSize, deleteGlass, getGlass, listGlassSizes, setGlassQuantity } from '@/db/glassRepo';
 import type { GlassItem } from '@/db/types';
 import { UNIT_LABELS, colorFamily, kindLabel, typeLabel } from '@/domain/glass';
+import type { SheetSize } from '@/domain/sizes';
 import { discardPhotos } from '@/lib/photoCleanup';
 import { space, type, useColors } from '@/theme/theme';
 
@@ -22,12 +24,17 @@ export default function GlassDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [item, setItem] = useState<GlassItem | null | undefined>(undefined);
+  const [sizes, setSizes] = useState<SheetSize[]>([]);
+  const [addingSize, setAddingSize] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteProblem, setDeleteProblem] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      getGlass(db, id).then(setItem);
+      Promise.all([getGlass(db, id), listGlassSizes(db, id)]).then(([g, z]) => {
+        setItem(g);
+        setSizes(z);
+      });
     }, [db, id]),
   );
 
@@ -47,6 +54,12 @@ export default function GlassDetailScreen() {
       </View>
     );
   }
+
+  const changeSizeCount = async (width: number, height: number, delta: number) => {
+    const next = await changeGlassSize(db, item.id, width, height, delta);
+    setSizes(next);
+    setItem(await getGlass(db, item.id));
+  };
 
   const changeQuantity = async (delta: number) => {
     const saved = await setGlassQuantity(db, item.id, item.quantity + delta);
@@ -121,7 +134,31 @@ export default function GlassDetailScreen() {
             </View>
           </View>
 
-          <QuantityCard quantity={item.quantity} unit={item.unit} onChange={changeQuantity} />
+          {sizes.length > 0 ? (
+            <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+              <Text style={[styles.cardLabel, { color: c.muted }]}>ON HAND BY SIZE</Text>
+              {sizes.map((s) => (
+                <SizeRow key={`${s.width}x${s.height}`} size={s} onChange={(d) => changeSizeCount(s.width, s.height, d)} />
+              ))}
+              <SizeTotals sizes={sizes} />
+              {addingSize ? (
+                <AddSize
+                  existing={sizes}
+                  onAdd={async (w, h) => {
+                    await changeSizeCount(w, h, 1);
+                    setAddingSize(false);
+                  }}
+                />
+              ) : (
+                <Pressable onPress={() => setAddingSize(true)} accessibilityRole="button" style={styles.addSize}>
+                  <Text style={[styles.addSizeText, { color: c.accent }]}>+ Add a size</Text>
+                </Pressable>
+              )}
+              <Text style={[styles.small, { color: c.muted }]}>Cut a sheet down? Take one from its size and add the pieces you kept.</Text>
+            </View>
+          ) : (
+            <QuantityCard quantity={item.quantity} unit={item.unit} onChange={changeQuantity} />
+          )}
 
           <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
             {details.map(([k, v]) => (
@@ -176,6 +213,9 @@ function Photo({ uri, caption }: { uri: string; caption?: string }) {
 }
 
 const styles = StyleSheet.create({
+  cardLabel: { fontSize: type.small, fontWeight: '700', letterSpacing: 0.8 },
+  addSize: { minHeight: 44, justifyContent: 'center' },
+  addSizeText: { fontSize: type.label, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.lg },
   content: { padding: space.md },
   stack: { gap: space.lg },

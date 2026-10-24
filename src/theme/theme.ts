@@ -14,6 +14,8 @@ const light = {
   coe90: '#2D7F55', // emerald
   coe96: '#9A5A0E', // amber
   danger: '#B0283F', // ruby
+  accentSoft: '#E3EBF8',
+  input: '#FFFFFF',
 };
 
 const dark: typeof light = {
@@ -27,6 +29,8 @@ const dark: typeof light = {
   coe90: '#62C493',
   coe96: '#E6AE58',
   danger: '#E36A7E',
+  accentSoft: '#1F2D44',
+  input: '#14181C',
 };
 
 export type Colors = typeof light;

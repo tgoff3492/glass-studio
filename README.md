@@ -18,6 +18,10 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the build order.
 
 Phase 0 (foundation) is in place: the app shell with Glass, Supplies, Projects and Kiln tabs, the local database and its schema, and photo storage. Each tab says what's coming in its phase. Cloud backup and sign-in are still to come.
 
+## Web preview
+
+A browser version of the app is published at https://tgoff3492.github.io/glass-studio/ for quick previews. Rebuild and republish it with `npm run deploy:web`. The real app is the iPhone and iPad build; the preview is for looking, not daily use, since anything entered there is stored only in that browser.
+
 ## Tech
 
 - [Expo](https://expo.dev) SDK 58 with React Native and TypeScript, so the same code can ship to Android later

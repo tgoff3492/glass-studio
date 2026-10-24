@@ -10,9 +10,9 @@ import { discardPhotos } from '@/lib/photoCleanup';
 
 export default function NewGlassScreen() {
   const db = useSQLiteContext();
-  const { kind } = useLocalSearchParams<{ kind?: string }>();
+  const { kind, barcode } = useLocalSearchParams<{ kind?: string; barcode?: string }>();
   const startKind = GLASS_KINDS.some((k) => k.value === kind) ? (kind as GlassKind) : 'sheet';
-  const [initial] = useState(() => emptyGlassInput(startKind));
+  const [initial] = useState(() => emptyGlassInput(startKind, barcode ?? ''));
 
   return (
     <GlassForm

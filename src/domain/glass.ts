@@ -122,6 +122,7 @@ export type GlassInput = {
   color_name: string;
   manufacturer: string;
   product_code: string;
+  barcode: string;
   coe: Coe | null;
   glass_type: GlassType | null;
   color_family: string | null;
@@ -139,12 +140,13 @@ export type ValidationResult =
   | { ok: true; value: GlassFields }
   | { ok: false; errors: Partial<Record<keyof GlassInput, string>> };
 
-export function emptyGlassInput(kind: GlassKind = 'sheet'): GlassInput {
+export function emptyGlassInput(kind: GlassKind = 'sheet', barcode = ''): GlassInput {
   return {
     kind,
     color_name: '',
     manufacturer: '',
     product_code: '',
+    barcode,
     coe: null,
     glass_type: null,
     color_family: null,
@@ -163,6 +165,7 @@ export function inputFromItem(item: GlassItem): GlassInput {
     color_name: item.color_name,
     manufacturer: item.manufacturer ?? '',
     product_code: item.product_code ?? '',
+    barcode: item.barcode ?? '',
     coe: item.coe,
     glass_type: item.glass_type,
     color_family: item.color_family,
@@ -176,6 +179,11 @@ export function inputFromItem(item: GlassItem): GlassInput {
 }
 
 const blankToNull = (s: string) => (s.trim() === '' ? null : s.trim());
+
+/** Barcodes are compared exactly, so drop spaces a person might type between digit groups. */
+export function normalizeBarcode(code: string): string {
+  return code.replace(/\s+/g, '');
+}
 
 /** Parses "1.5", "1 1/2", "1/2" or "3/4". Returns null if it isn't a number. */
 export function parseAmount(text: string): number | null {
@@ -218,6 +226,7 @@ export function validateGlassInput(input: GlassInput): ValidationResult {
       color_name: input.color_name.trim(),
       manufacturer: blankToNull(input.manufacturer),
       product_code: blankToNull(input.product_code),
+      barcode: blankToNull(normalizeBarcode(input.barcode)),
       coe: input.coe,
       glass_type: input.kind === 'sheet' || input.kind === 'scrap' ? input.glass_type : null,
       color_family: input.color_family,

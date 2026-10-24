@@ -1,4 +1,4 @@
-import type { GlassFields } from '../domain/glass.ts';
+import { normalizeBarcode, type GlassFields } from '../domain/glass.ts';
 import { newId, nowIso } from './ids.ts';
 import type { Coe, GlassItem, GlassKind } from './types.ts';
 
@@ -23,6 +23,7 @@ const COLUMNS = [
   'manufacturer',
   'color_name',
   'product_code',
+  'barcode',
   'coe',
   'glass_type',
   'color_family',
@@ -43,10 +44,10 @@ export async function listGlass(db: QueryDb, filter: GlassFilter = {}): Promise<
     // Every word must match somewhere, so "blue bull" finds Bullseye blues.
     for (const word of search.split(/\s+/)) {
       where.push(
-        "(color_name LIKE ? ESCAPE '\\' OR manufacturer LIKE ? ESCAPE '\\' OR product_code LIKE ? ESCAPE '\\' OR notes LIKE ? ESCAPE '\\')",
+        "(color_name LIKE ? ESCAPE '\\' OR manufacturer LIKE ? ESCAPE '\\' OR product_code LIKE ? ESCAPE '\\' OR barcode LIKE ? ESCAPE '\\' OR notes LIKE ? ESCAPE '\\')",
       );
       const like = `%${word.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-      params.push(like, like, like, like);
+      params.push(like, like, like, like, like);
     }
   }
   if (filter.kind) {
@@ -121,4 +122,38 @@ export async function listManufacturers(db: QueryDb): Promise<string[]> {
     [],
   );
   return rows.map((r) => r.manufacturer);
+}
+
+/**
+ * Finds glass for a scanned or typed code. A linked barcode wins; otherwise the
+ * code is tried as a product code, since some labels print that as the barcode.
+ */
+export async function findGlassByCode(db: QueryDb, code: string): Promise<GlassItem[]> {
+  const c = normalizeBarcode(code);
+  if (c === '') return [];
+  const byBarcode = await db.getAllAsync<GlassItem>('SELECT * FROM glass_items WHERE barcode = ?', [c]);
+  if (byBarcode.length > 0) return byBarcode;
+  return db.getAllAsync<GlassItem>(
+    'SELECT * FROM glass_items WHERE product_code = ? COLLATE NOCASE ORDER BY color_name COLLATE NOCASE',
+    [c],
+  );
+}
+
+/** The item already using this barcode, other than `exceptId`, or null. */
+export function glassWithBarcode(db: QueryDb, barcode: string, exceptId?: string): Promise<GlassItem | null> {
+  return db.getFirstAsync<GlassItem>('SELECT * FROM glass_items WHERE barcode = ? AND id != ?', [
+    normalizeBarcode(barcode),
+    exceptId ?? '',
+  ]);
+}
+
+export type LinkResult = { linked: true } | { linked: false; usedBy: GlassItem };
+
+/** Attaches a barcode to existing glass, unless another item already has it. */
+export async function linkBarcode(db: QueryDb, id: string, barcode: string): Promise<LinkResult> {
+  const code = normalizeBarcode(barcode);
+  const other = await glassWithBarcode(db, code, id);
+  if (other) return { linked: false, usedBy: other };
+  await db.runAsync('UPDATE glass_items SET barcode = ?, updated_at = ? WHERE id = ?', [code, nowIso(), id]);
+  return { linked: true };
 }

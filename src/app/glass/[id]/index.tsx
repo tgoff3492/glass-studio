@@ -74,6 +74,7 @@ export default function GlassDetailScreen() {
   if (item.cost_per_unit_cents !== null) {
     details.push([`Price per ${UNIT_LABELS[item.unit].one}`, `$${(item.cost_per_unit_cents / 100).toFixed(2)}`]);
   }
+  if (item.barcode) details.push(['Barcode', item.barcode]);
   details.push(['Added', new Date(item.created_at).toLocaleDateString()]);
 
   return (

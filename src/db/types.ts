@@ -24,6 +24,8 @@ export type GlassItem = {
   manufacturer: string | null;
   color_name: string;
   product_code: string | null;
+  /** The code from the label's barcode, once scanned or typed. Unique across items. */
+  barcode: string | null;
   /** Null for glass used only in stained work, where COE doesn't matter. */
   coe: Coe | null;
   glass_type: GlassType | null;

@@ -122,6 +122,14 @@ CREATE TABLE firings (
 CREATE INDEX firings_project ON firings (project_id);
 `,
   },
+  {
+    // Barcode scanning: the code printed on a sheet's label, linked to one item.
+    version: 2,
+    sql: `
+ALTER TABLE glass_items ADD COLUMN barcode TEXT;
+CREATE UNIQUE INDEX glass_items_barcode ON glass_items (barcode) WHERE barcode IS NOT NULL;
+`,
+  },
 ];
 
 export const LATEST_VERSION = migrations[migrations.length - 1].version;

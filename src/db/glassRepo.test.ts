@@ -6,7 +6,10 @@ import { emptyGlassInput, validateGlassInput, type GlassInput } from '../domain/
 import {
   createGlass,
   deleteGlass,
+  findGlassByCode,
   getGlass,
+  glassWithBarcode,
+  linkBarcode,
   listGlass,
   listManufacturers,
   setGlassQuantity,
@@ -98,4 +101,26 @@ test('deletes an item, but not one a project uses', async () => {
 test('lists the makers she has used', async () => {
   const { db } = await seeded();
   assert.deepEqual(await listManufacturers(db), ['Bullseye', 'Kokomo', 'Oceanside']);
+});
+
+test('finds glass by linked barcode, then by product code', async () => {
+  const { db, ids } = await seeded();
+  assert.deepEqual((await findGlassByCode(db, '001114')).map((g) => g.id), [ids.royal]);
+  assert.deepEqual(await findGlassByCode(db, '0123456789012'), []);
+
+  assert.deepEqual(await linkBarcode(db, ids.amber, '0 12345 67890 5'), { linked: true });
+  assert.equal((await getGlass(db, ids.amber))?.barcode, '012345678905');
+  assert.deepEqual((await findGlassByCode(db, '012345678905')).map((g) => g.id), [ids.amber]);
+  assert.deepEqual((await listGlass(db, { search: '678905' })).map((g) => g.id), [ids.amber]);
+});
+
+test('a barcode can only belong to one item', async () => {
+  const { db, ids } = await seeded();
+  await linkBarcode(db, ids.amber, '111');
+  const r = await linkBarcode(db, ids.royal, '111');
+  assert.equal(r.linked, false);
+  if (!r.linked) assert.equal(r.usedBy.id, ids.amber);
+  assert.equal((await glassWithBarcode(db, '111', ids.amber)), null);
+  assert.equal((await glassWithBarcode(db, '111'))?.id, ids.amber);
+  await assert.rejects(createGlass(db, fields({ color_name: 'Copy', barcode: '111' })));
 });

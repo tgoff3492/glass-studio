@@ -21,6 +21,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Glass' }} />
         <Stack.Screen name="glass/new" options={{ title: 'Add glass', presentation: 'modal' }} />
+        <Stack.Screen name="glass/scan" options={{ title: 'Scan glass', presentation: 'modal' }} />
         <Stack.Screen name="glass/[id]/index" options={{ title: '' }} />
         <Stack.Screen name="glass/[id]/edit" options={{ title: 'Edit', presentation: 'modal' }} />
       </Stack>

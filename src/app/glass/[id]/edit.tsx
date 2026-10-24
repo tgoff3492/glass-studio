@@ -33,6 +33,7 @@ export default function EditGlassScreen() {
       <Stack.Screen options={{ title: `Edit ${item.color_name}` }} />
       <GlassForm
         initial={inputFromItem(item)}
+        itemId={item.id}
         submitLabel="Save changes"
         onSubmit={async (fields) => {
           await updateGlass(db, item.id, fields);

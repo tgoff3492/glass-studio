@@ -102,7 +102,18 @@ export default function GlassScreen() {
           <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
             Glass
           </Text>
-          <Button label="+ Add glass" onPress={() => router.push('/glass/new')} style={styles.addButton} />
+          <View style={styles.titleActions}>
+            <Pressable
+              onPress={() => router.push('/glass/scan')}
+              accessibilityRole="button"
+              accessibilityLabel="Scan a barcode"
+              style={({ pressed }) => [styles.scanButton, { borderColor: c.border, backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="barcode-outline" size={24} color={c.accent} />
+              <Text style={[styles.scanText, { color: c.accent }]}>Scan</Text>
+            </Pressable>
+            <Button label="+ Add" onPress={() => router.push('/glass/new')} style={styles.addButton} accessibilityHint="Add glass" />
+          </View>
         </View>
         <View style={[styles.search, { backgroundColor: c.input, borderColor: c.border }]}>
           <Ionicons name="search" size={22} color={c.muted} />
@@ -208,7 +219,10 @@ const styles = StyleSheet.create({
   top: { paddingHorizontal: space.md, paddingTop: space.md, gap: space.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   title: { fontSize: type.title, fontWeight: '700' },
+  titleActions: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   addButton: { minHeight: 48, paddingHorizontal: space.md },
+  scanButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.md, borderRadius: 12, borderWidth: 1 },
+  scanText: { fontSize: type.body, fontWeight: '700' },
   search: {
     flexDirection: 'row',
     alignItems: 'center',

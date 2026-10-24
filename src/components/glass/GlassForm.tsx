@@ -1,11 +1,12 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { PhotoSlot } from '@/components/glass/PhotoSlot';
 import { Button, Chip, ChipRow, Column, Field, Label } from '@/components/ui';
-import { listManufacturers } from '@/db/glassRepo';
+import { glassWithBarcode, listManufacturers } from '@/db/glassRepo';
 import type { Coe, GlassKind } from '@/db/types';
 import {
   COLOR_FAMILIES,
@@ -23,6 +24,8 @@ import { space, type, useColors } from '@/theme/theme';
 
 type Props = {
   initial: GlassInput;
+  /** The item being edited, so its own barcode isn't reported as a duplicate. */
+  itemId?: string;
   submitLabel: string;
   onSubmit: (fields: GlassFields) => Promise<void>;
   /** Called with what was on screen, so the caller can clean up photos taken but not saved. */
@@ -35,7 +38,7 @@ const COE_CHOICES: { value: Coe | null; label: string }[] = [
   { value: null, label: 'Not for fusing / not sure' },
 ];
 
-export function GlassForm({ initial, submitLabel, onSubmit, onCancel }: Props) {
+export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: Props) {
   const db = useSQLiteContext();
   const c = useColors();
   const insets = useSafeAreaInsets();
@@ -43,6 +46,7 @@ export function GlassForm({ initial, submitLabel, onSubmit, onCancel }: Props) {
   const [errors, setErrors] = useState<Partial<Record<keyof GlassInput, string>>>({});
   const [saving, setSaving] = useState(false);
   const [usedMakers, setUsedMakers] = useState<string[]>([]);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     listManufacturers(db).then(setUsedMakers).catch(() => {});
@@ -79,6 +83,13 @@ export function GlassForm({ initial, submitLabel, onSubmit, onCancel }: Props) {
     }
     setSaving(true);
     try {
+      if (result.value.barcode) {
+        const other = await glassWithBarcode(db, result.value.barcode, itemId);
+        if (other) {
+          setErrors({ barcode: `This barcode already belongs to ${other.color_name}.` });
+          return;
+        }
+      }
       await onSubmit(result.value);
     } finally {
       setSaving(false);
@@ -141,6 +152,19 @@ export function GlassForm({ initial, submitLabel, onSubmit, onCancel }: Props) {
             autoCapitalize="characters"
             autoCorrect={false}
           />
+
+          <View style={styles.group}>
+            <Field
+              label="Barcode"
+              hint="Optional. Scan the label once, and scanning it later brings this glass right up."
+              value={input.barcode}
+              onChangeText={(t) => set('barcode', t)}
+              error={errors.barcode}
+              keyboardType="number-pad"
+              autoCorrect={false}
+            />
+            <Button label={input.barcode ? 'Scan again' : 'Scan barcode'} variant="secondary" onPress={() => setScanning(true)} />
+          </View>
 
           <View>
             <Label
@@ -248,6 +272,24 @@ export function GlassForm({ initial, submitLabel, onSubmit, onCancel }: Props) {
           </View>
         </Column>
       </ScrollView>
+      <Modal visible={scanning} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setScanning(false)}>
+        <SafeAreaView style={[styles.flex, { backgroundColor: c.background }]}>
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            <Column style={styles.form}>
+              <Text style={[styles.modalTitle, { color: c.text }]}>Scan barcode</Text>
+              {scanning && (
+                <BarcodeScanner
+                  onCode={(code) => {
+                    set('barcode', code);
+                    setScanning(false);
+                  }}
+                  onCancel={() => setScanning(false)}
+                />
+              )}
+            </Column>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -258,5 +300,6 @@ const styles = StyleSheet.create({
   form: { gap: space.lg },
   group: { gap: space.sm },
   summary: { fontSize: type.label, fontWeight: '700' },
+  modalTitle: { fontSize: type.heading, fontWeight: '700' },
   actions: { gap: space.sm },
 });

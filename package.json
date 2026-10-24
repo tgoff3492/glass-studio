@@ -34,7 +34,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types --no-warnings 'src/**/*.test.ts'",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "deploy:web": "bash scripts/deploy-pages.sh"
   },
   "private": true
 }

@@ -24,6 +24,9 @@ export default function RootLayout() {
         <Stack.Screen name="glass/scan" options={{ title: 'Scan glass', presentation: 'modal' }} />
         <Stack.Screen name="glass/[id]/index" options={{ title: '' }} />
         <Stack.Screen name="glass/[id]/edit" options={{ title: 'Edit', presentation: 'modal' }} />
+        <Stack.Screen name="supplies/new" options={{ title: 'Add supply', presentation: 'modal' }} />
+        <Stack.Screen name="supplies/[id]/index" options={{ title: '' }} />
+        <Stack.Screen name="supplies/[id]/edit" options={{ title: 'Edit', presentation: 'modal' }} />
       </Stack>
     </SQLiteProvider>
   );

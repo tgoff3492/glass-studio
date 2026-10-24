@@ -26,14 +26,15 @@ Arrows mean "needs data from."
 - Data model for glass, supplies, projects and firings
 - Large text and big tap targets by default; phone and tablet first
 
-## Phase 1 · Glass inventory (first release)
+## Phase 1 · Glass inventory (first release) — built
 - Sheet glass: manufacturer, color name, product code, COE (90/96), type (cathedral, opalescent, streaky, wispy, iridized, textured), size on hand
 - Frit, powder, stringers, noodles, confetti tracked by weight
 - Scrap bin for offcuts by color and rough size
 - Photo per sheet, plus a "how it looks fired" photo for fused glass
 - Search and filter by color family, manufacturer, COE and type
+- Barcode scanning: a known label opens its glass; a new one can be added or linked
 
-## Phase 2 · Supplies & shopping
+## Phase 2 · Supplies & shopping — built
 - Stained: copper foil (by width), solder (60/40, 50/50, lead-free), lead came, flux, patina, grinder bits, cutter oil
 - Fused: kiln wash, fiber paper, shelf paper, molds, dichroic
 - Low-stock alerts with a per-item minimum
@@ -61,7 +62,6 @@ Arrows mean "needs data from."
 - Sales log and monthly totals
 
 ## Phase 6 · Smart extras
-- Scan a label or product code to add glass
 - "What can I make with my scrap?" suggestions
 - Find a color by photo
 - Export to spreadsheet

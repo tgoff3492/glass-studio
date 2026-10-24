@@ -130,6 +130,24 @@ ALTER TABLE glass_items ADD COLUMN barcode TEXT;
 CREATE UNIQUE INDEX glass_items_barcode ON glass_items (barcode) WHERE barcode IS NOT NULL;
 `,
   },
+  {
+    // Shopping list: things she adds by hand. Low-stock supplies are computed, not stored.
+    version: 3,
+    sql: `
+CREATE TABLE shopping_items (
+  id TEXT PRIMARY KEY NOT NULL,
+  label TEXT NOT NULL,
+  note TEXT,
+  source_type TEXT CHECK (source_type IN ('glass','supply')),
+  source_id TEXT,
+  done INTEGER NOT NULL DEFAULT 0 CHECK (done IN (0, 1)),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX shopping_items_source ON shopping_items (source_type, source_id);
+CREATE INDEX supplies_category ON supplies (category);
+`,
+  },
 ];
 
 export const LATEST_VERSION = migrations[migrations.length - 1].version;

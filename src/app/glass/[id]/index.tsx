@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -8,10 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoeBadge } from '@/components/glass/CoeBadge';
 import { GlassThumb } from '@/components/glass/GlassThumb';
+import { QuantityCard } from '@/components/QuantityCard';
+import { ShoppingButton } from '@/components/ShoppingButton';
 import { Button, Column } from '@/components/ui';
 import { deleteGlass, getGlass, setGlassQuantity } from '@/db/glassRepo';
 import type { GlassItem } from '@/db/types';
-import { STEP_FOR_UNIT, UNIT_LABELS, colorFamily, formatQuantity, kindLabel, typeLabel } from '@/domain/glass';
+import { UNIT_LABELS, colorFamily, kindLabel, typeLabel } from '@/domain/glass';
 import { discardPhotos } from '@/lib/photoCleanup';
 import { space, type, useColors } from '@/theme/theme';
 
@@ -47,7 +48,6 @@ export default function GlassDetailScreen() {
     );
   }
 
-  const step = STEP_FOR_UNIT[item.unit];
   const changeQuantity = async (delta: number) => {
     const saved = await setGlassQuantity(db, item.id, item.quantity + delta);
     setItem({ ...item, quantity: saved });
@@ -121,22 +121,7 @@ export default function GlassDetailScreen() {
             </View>
           </View>
 
-          <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-            <Text style={[styles.cardLabel, { color: c.muted }]}>ON HAND</Text>
-            <View style={styles.stepper}>
-              <StepButton icon="remove" label={`Use ${step} ${UNIT_LABELS[item.unit].many}`} onPress={() => changeQuantity(-step)} disabled={item.quantity <= 0} />
-              <Text
-                style={[styles.amount, { color: item.quantity === 0 ? c.danger : c.text }]}
-                accessibilityLiveRegion="polite"
-              >
-                {item.quantity === 0 ? 'Out' : formatQuantity(item.quantity, item.unit)}
-              </Text>
-              <StepButton icon="add" label={`Add ${step} ${UNIT_LABELS[item.unit].many}`} onPress={() => changeQuantity(step)} />
-            </View>
-            <Text style={[styles.small, { color: c.muted }]}>
-              Each tap changes it by {formatQuantity(step, item.unit)}. Tap Edit to type an exact amount.
-            </Text>
-          </View>
+          <QuantityCard quantity={item.quantity} unit={item.unit} onChange={changeQuantity} />
 
           <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
             {details.map(([k, v]) => (
@@ -153,6 +138,11 @@ export default function GlassDetailScreen() {
             )}
           </View>
 
+          <ShoppingButton
+            sourceType="glass"
+            sourceId={item.id}
+            label={[item.manufacturer, item.color_name, item.product_code && `(${item.product_code})`].filter(Boolean).join(' ')}
+          />
           <Button label="Edit details" variant="secondary" onPress={() => router.push({ pathname: '/glass/[id]/edit', params: { id: item.id } })} />
 
           {deleteProblem && <Text style={[styles.body, { color: c.danger }]}>{deleteProblem}</Text>}
@@ -185,24 +175,6 @@ function Photo({ uri, caption }: { uri: string; caption?: string }) {
   );
 }
 
-function StepButton({ icon, label, onPress, disabled }: { icon: 'add' | 'remove'; label: string; onPress: () => void; disabled?: boolean }) {
-  const c = useColors();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.step,
-        { borderColor: c.border, backgroundColor: c.accentSoft, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
-      ]}
-    >
-      <Ionicons name={icon} size={30} color={c.accent} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.lg },
   content: { padding: space.md },
@@ -218,10 +190,6 @@ const styles = StyleSheet.create({
   badges: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.md, marginTop: space.xs },
   tag: { fontSize: type.label, fontWeight: '600' },
   card: { borderWidth: 1, borderRadius: 12, padding: space.md, gap: space.md },
-  cardLabel: { fontSize: type.small, fontWeight: '700', letterSpacing: 0.8 },
-  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
-  step: { width: 64, height: 64, borderRadius: 32, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  amount: { flex: 1, textAlign: 'center', fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: space.md },
   detailKey: { fontSize: type.label, fontWeight: '600' },
   detailValue: { fontSize: type.label, fontWeight: '700', flexShrink: 1, textAlign: 'right' },

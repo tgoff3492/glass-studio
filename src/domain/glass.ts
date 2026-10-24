@@ -63,6 +63,9 @@ export const UNIT_LABELS: Record<QuantityUnit, { one: string; many: string }> = 
   ft: { one: 'ft', many: 'ft' },
   roll: { one: 'roll', many: 'rolls' },
   jar: { one: 'jar', many: 'jars' },
+  bottle: { one: 'bottle', many: 'bottles' },
+  stick: { one: 'stick', many: 'sticks' },
+  pack: { one: 'pack', many: 'packs' },
 };
 
 /** Units that make sense for each kind of glass, most common first. */
@@ -87,6 +90,9 @@ export const STEP_FOR_UNIT: Record<QuantityUnit, number> = {
   ft: 1,
   roll: 1,
   jar: 1,
+  bottle: 1,
+  stick: 1,
+  pack: 1,
 };
 
 /** Kinds that only exist for fusing, so their COE always matters. */

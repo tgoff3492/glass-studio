@@ -110,6 +110,7 @@ export async function deleteGlass(db: QueryDb, id: string): Promise<DeleteResult
     [id],
   );
   if (used && used.n > 0) return { deleted: false, usedInProjects: used.n };
+  await db.runAsync("DELETE FROM shopping_items WHERE source_type = 'glass' AND source_id = ?", [id]);
   await db.runAsync("DELETE FROM photos WHERE owner_type = 'glass' AND owner_id = ?", [id]);
   await db.runAsync('DELETE FROM glass_items WHERE id = ?', [id]);
   return { deleted: true };

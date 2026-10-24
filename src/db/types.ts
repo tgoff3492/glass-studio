@@ -16,7 +16,19 @@ export type GlassType =
   | 'other';
 
 /** How a quantity is measured. Sheets by area or count, frit and powder by weight. */
-export type QuantityUnit = 'sq_in' | 'sheet' | 'lb' | 'oz' | 'g' | 'piece' | 'ft' | 'roll' | 'jar';
+export type QuantityUnit =
+  | 'sq_in'
+  | 'sheet'
+  | 'lb'
+  | 'oz'
+  | 'g'
+  | 'piece'
+  | 'ft'
+  | 'roll'
+  | 'jar'
+  | 'bottle'
+  | 'stick'
+  | 'pack';
 
 export type GlassItem = {
   id: string;
@@ -68,6 +80,21 @@ export type Supply = {
   cost_per_unit_cents: number | null;
   photo_uri: string | null;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ShoppingSource = 'glass' | 'supply';
+
+/** Something to buy that she added herself. Running-low supplies are worked out live, not stored. */
+export type ShoppingItem = {
+  id: string;
+  label: string;
+  note: string | null;
+  /** Set when the item came from a glass or supply page, so the list can link back. */
+  source_type: ShoppingSource | null;
+  source_id: string | null;
+  done: 0 | 1;
   created_at: string;
   updated_at: string;
 };

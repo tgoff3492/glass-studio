@@ -18,7 +18,9 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the build order.
 
 Phase 0 (foundation) is in place: the app shell with Glass, Supplies, Projects and Kiln tabs, the local database and its schema, and photo storage. Cloud backup and sign-in are still to come.
 
-Phase 1 (glass inventory) is built: add, edit and delete sheet glass, frit, powder, stringers, noodles, confetti and scrap; COE on every item, required for fusing-only glass; sheet and fired photos; quick +/− for quantity; search by color, maker or code; and filters by kind, COE and color family. Supplies, Projects and Kiln still show what's coming.
+Phase 1 (glass inventory) is built: add, edit and delete sheet glass, frit, powder, stringers, noodles, confetti and scrap; COE on every item, required for fusing-only glass; sheet and fired photos; quick +/− for quantity; search by color, maker or code; filters by kind, COE and color family; and barcode scanning (a known label opens its glass, a new one can be added or linked; codes can also be typed).
+
+Phase 2 (supplies and shopping) is built: stained-glass supplies (foil, solder, came, flux, patina, grinder bits) and fusing supplies (kiln wash, fiber paper, shelf paper, molds, dichroic), each with an optional low-stock reminder; a shopping list where running-low supplies appear on their own, plus anything added by hand or from a glass or supply page. Projects and Kiln still show what's coming.
 
 ## Web preview
 

@@ -1,17 +1,213 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { router, useFocusEffect } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useCallback, useState } from 'react';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { ShoppingList } from '@/components/supplies/ShoppingList';
+import { StockBadge, SupplyThumb } from '@/components/supplies/SupplyBits';
+import { Button, Chip, Column } from '@/components/ui';
+import { countOpenShopping } from '@/db/shoppingRepo';
+import { countLowSupplies, listSupplies } from '@/db/suppliesRepo';
+import type { Supply } from '@/db/types';
+import { formatQuantity } from '@/domain/glass';
+import { SUPPLY_GROUPS, categoryInfo, type SupplyGroup } from '@/domain/supplies';
+import { space, tapTarget, type, useColors } from '@/theme/theme';
+
+type View_ = 'stock' | 'shopping';
 
 export default function SuppliesScreen() {
+  const db = useSQLiteContext();
+  const c = useColors();
+  const [view, setView] = useState<View_>('stock');
+  const [items, setItems] = useState<Supply[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [toBuy, setToBuy] = useState(0);
+  const [search, setSearch] = useState('');
+  const [group, setGroup] = useState<SupplyGroup | null>(null);
+  const [lowOnly, setLowOnly] = useState(false);
+
+  const loadCounts = useCallback(async () => {
+    const [low, open, all] = await Promise.all([
+      countLowSupplies(db),
+      countOpenShopping(db),
+      db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM supplies'),
+    ]);
+    setToBuy(low + open);
+    setTotal(all?.n ?? 0);
+  }, [db]);
+
+  const load = useCallback(async () => {
+    setItems(await listSupplies(db, { search, group, lowOnly }));
+    await loadCounts();
+  }, [db, search, group, lowOnly, loadCounts]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const filtering = Boolean(search.trim() || group || lowOnly);
+  const clearFilters = () => {
+    setSearch('');
+    setGroup(null);
+    setLowOnly(false);
+  };
+
   return (
-    <ComingSoon
-      title="Supplies"
-      phase="Coming in Phase 2"
-      summary="Everything that isn't glass, and a heads-up before anything runs out."
-      features={[
-        'Copper foil, solder, came, flux and patina',
-        'Kiln wash, fiber paper, shelf paper and molds',
-        'Low-stock alerts at a minimum you set',
-        'A shopping list that fills itself in',
-      ]}
-    />
+    <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
+      <Column style={styles.top}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
+            Supplies
+          </Text>
+          <Button label="+ Add" onPress={() => router.push('/supplies/new')} style={styles.addButton} accessibilityHint="Add a supply" />
+        </View>
+        <View style={[styles.segment, { backgroundColor: c.accentSoft }]} accessibilityRole="tablist">
+          <Segment label="On hand" selected={view === 'stock'} onPress={() => setView('stock')} />
+          <Segment label={toBuy > 0 ? `Shopping list (${toBuy})` : 'Shopping list'} selected={view === 'shopping'} onPress={() => setView('shopping')} />
+        </View>
+      </Column>
+
+      {view === 'shopping' ? (
+        <ShoppingList onChanged={loadCounts} />
+      ) : (
+        <FlatList
+          data={items ?? []}
+          keyExtractor={(s) => s.id}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            total > 0 ? (
+              <Column style={styles.filters}>
+                <View style={[styles.search, { backgroundColor: c.input, borderColor: c.border }]}>
+                  <Ionicons name="search" size={22} color={c.muted} />
+                  <TextInput
+                    value={search}
+                    onChangeText={setSearch}
+                    placeholder="Search name, size or brand"
+                    placeholderTextColor={c.muted}
+                    style={[styles.searchInput, { color: c.text }]}
+                    accessibilityLabel="Search supplies"
+                    autoCorrect={false}
+                    clearButtonMode="while-editing"
+                  />
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
+                  <Chip label="Everything" selected={!group && !lowOnly} onPress={() => { setGroup(null); setLowOnly(false); }} />
+                  <Chip label="Running low" selected={lowOnly} onPress={() => setLowOnly(!lowOnly)} />
+                  {SUPPLY_GROUPS.map((g) => (
+                    <Chip key={g.value} label={g.label} selected={group === g.value} onPress={() => setGroup(group === g.value ? null : g.value)} />
+                  ))}
+                </ScrollView>
+                {filtering && items && (
+                  <View style={styles.countRow}>
+                    <Text style={[styles.count, { color: c.muted }]}>{`${items.length} of ${total} shown`}</Text>
+                    <Pressable onPress={clearFilters} accessibilityRole="button" hitSlop={12}>
+                      <Text style={[styles.clear, { color: c.accent }]}>Clear filters</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </Column>
+            ) : undefined
+          }
+          ItemSeparatorComponent={() => (
+            <Column>
+              <View style={[styles.sep, { backgroundColor: c.border }]} />
+            </Column>
+          )}
+          renderItem={({ item }) => <SupplyRow item={item} />}
+          ListEmptyComponent={
+            items === null ? undefined : total === 0 ? (
+              <Column style={styles.empty}>
+                <Text style={[styles.emptyTitle, { color: c.text }]}>No supplies yet</Text>
+                <Text style={[styles.body, { color: c.muted }]}>
+                  {"Add foil, solder, kiln wash and the rest. Set a reminder amount on each, and they'll go on the shopping list when they run low."}
+                </Text>
+                <Button label="Add your first supply" onPress={() => router.push('/supplies/new')} />
+              </Column>
+            ) : (
+              <Column style={styles.empty}>
+                <Text style={[styles.emptyTitle, { color: c.text }]}>{lowOnly && !search && !group ? 'Nothing is running low' : 'Nothing matches'}</Text>
+                <Button label="Clear filters" variant="secondary" onPress={clearFilters} />
+              </Column>
+            )
+          }
+        />
+      )}
+    </SafeAreaView>
   );
 }
+
+function Segment({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const c = useColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityState={{ selected }}
+      style={[styles.segmentItem, selected && { backgroundColor: c.surface, borderColor: c.border }]}
+    >
+      <Text style={[styles.segmentText, { color: selected ? c.text : c.accent }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function SupplyRow({ item }: { item: Supply }) {
+  const c = useColors();
+  const sub = [item.size, item.brand].filter(Boolean).join(' · ') || categoryInfo(item.category).label;
+  return (
+    <Column>
+      <Pressable
+        onPress={() => router.push({ pathname: '/supplies/[id]', params: { id: item.id } })}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+      >
+        <SupplyThumb uri={item.photo_uri} category={item.category} />
+        <View style={styles.rowText}>
+          <Text style={[styles.rowTitle, { color: c.text }]} numberOfLines={2}>
+            {item.name}
+          </Text>
+          <Text style={[styles.rowSub, { color: c.muted }]} numberOfLines={1}>
+            {sub}
+          </Text>
+          <StockBadge quantity={item.quantity} min={item.min_quantity} />
+        </View>
+        <Text style={[styles.qty, { color: item.quantity === 0 ? c.danger : c.text }]}>
+          {item.quantity === 0 ? 'Out' : formatQuantity(item.quantity, item.unit)}
+        </Text>
+      </Pressable>
+    </Column>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  top: { paddingHorizontal: space.md, paddingTop: space.md, gap: space.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  title: { fontSize: type.title, fontWeight: '700' },
+  addButton: { minHeight: 48, paddingHorizontal: space.md },
+  segment: { flexDirection: 'row', borderRadius: 12, padding: 4, gap: 4 },
+  segmentItem: { flex: 1, minHeight: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'transparent' },
+  segmentText: { fontSize: type.label, fontWeight: '700' },
+  list: { paddingHorizontal: space.md, paddingBottom: space.xl, flexGrow: 1 },
+  filters: { gap: space.sm, paddingTop: space.md, paddingBottom: space.sm },
+  search: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderWidth: 1, borderRadius: 12, paddingHorizontal: space.md, minHeight: tapTarget },
+  searchInput: { flex: 1, fontSize: type.body, minHeight: tapTarget },
+  chips: { gap: space.sm, paddingRight: space.md },
+  countRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  count: { fontSize: type.small },
+  clear: { fontSize: type.label, fontWeight: '700' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md, minHeight: tapTarget },
+  rowText: { flex: 1, gap: 3, minWidth: 0 },
+  rowTitle: { fontSize: type.body, fontWeight: '700' },
+  rowSub: { fontSize: type.label },
+  qty: { fontSize: type.label, fontWeight: '700', textAlign: 'right', maxWidth: 110, fontVariant: ['tabular-nums'] },
+  sep: { height: StyleSheet.hairlineWidth },
+  empty: { gap: space.md, paddingTop: space.xl },
+  emptyTitle: { fontSize: type.heading, fontWeight: '700' },
+  body: { fontSize: type.body, lineHeight: type.body * 1.4 },
+});

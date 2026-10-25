@@ -163,6 +163,17 @@ CREATE TABLE glass_pieces (
 ALTER TABLE glass_items ADD COLUMN size_summary TEXT;
 `,
   },
+  {
+    // Projects: glass used by size, and a bench timer that survives closing the app.
+    version: 5,
+    sql: `
+ALTER TABLE project_glass ADD COLUMN width_in REAL;
+ALTER TABLE project_glass ADD COLUMN height_in REAL;
+ALTER TABLE projects ADD COLUMN timer_started_at TEXT;
+CREATE INDEX project_supplies_supply ON project_supplies (supply_id);
+CREATE INDEX project_glass_glass ON project_glass (glass_item_id);
+`,
+  },
 ];
 
 export const LATEST_VERSION = migrations[migrations.length - 1].version;

@@ -42,7 +42,7 @@ Arrows mean "needs data from."
 - Shopping list built from low stock and wish-list colors
 - Cost per unit
 
-## Phase 3 · Projects
+## Phase 3 · Projects — built
 - Project card: name, type (stained/fused), pattern image, progress photos
 - Pull glass from inventory with automatic deduction
 - COE compatibility warning for fused pieces

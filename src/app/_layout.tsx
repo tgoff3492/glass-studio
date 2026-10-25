@@ -27,6 +27,11 @@ export default function RootLayout() {
         <Stack.Screen name="supplies/new" options={{ title: 'Add supply', presentation: 'modal' }} />
         <Stack.Screen name="supplies/[id]/index" options={{ title: '' }} />
         <Stack.Screen name="supplies/[id]/edit" options={{ title: 'Edit', presentation: 'modal' }} />
+        <Stack.Screen name="projects/new" options={{ title: 'New project', presentation: 'modal' }} />
+        <Stack.Screen name="projects/[id]/index" options={{ title: '' }} />
+        <Stack.Screen name="projects/[id]/edit" options={{ title: 'Edit project', presentation: 'modal' }} />
+        <Stack.Screen name="projects/[id]/add-glass" options={{ title: 'Use glass', presentation: 'modal' }} />
+        <Stack.Screen name="projects/[id]/add-supply" options={{ title: 'Use a supply', presentation: 'modal' }} />
       </Stack>
     </SQLiteProvider>
   );

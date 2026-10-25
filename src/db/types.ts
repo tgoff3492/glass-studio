@@ -122,6 +122,8 @@ export type Project = {
   status: ProjectStatus;
   pattern_photo_uri: string | null;
   minutes_spent: number;
+  /** When the bench timer was started, or null when it isn't running. Survives closing the app. */
+  timer_started_at: string | null;
   started_on: string | null;
   finished_on: string | null;
   notes: string | null;
@@ -133,8 +135,11 @@ export type ProjectGlass = {
   id: string;
   project_id: string;
   glass_item_id: string;
+  /** Sheets of one size when width/height are set; otherwise an amount in the glass's unit. */
   quantity: number;
   unit: QuantityUnit;
+  width_in: number | null;
+  height_in: number | null;
 };
 
 export type ProjectSupply = {

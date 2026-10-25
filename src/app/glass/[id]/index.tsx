@@ -12,7 +12,9 @@ import { QuantityCard } from '@/components/QuantityCard';
 import { ShoppingButton } from '@/components/ShoppingButton';
 import { Button, Column } from '@/components/ui';
 import { changeGlassSize, deleteGlass, getGlass, listGlassSizes, setGlassQuantity } from '@/db/glassRepo';
-import type { GlassItem } from '@/db/types';
+import { projectsUsingGlass } from '@/db/projectsRepo';
+import { StatusPill } from '@/components/projects/ProjectBits';
+import type { GlassItem, ProjectKind, ProjectStatus } from '@/db/types';
 import { UNIT_LABELS, colorFamily, kindLabel, typeLabel } from '@/domain/glass';
 import type { SheetSize } from '@/domain/sizes';
 import { discardPhotos } from '@/lib/photoCleanup';
@@ -25,15 +27,17 @@ export default function GlassDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [item, setItem] = useState<GlassItem | null | undefined>(undefined);
   const [sizes, setSizes] = useState<SheetSize[]>([]);
+  const [usedIn, setUsedIn] = useState<{ id: string; name: string; status: ProjectStatus; kind: ProjectKind }[]>([]);
   const [addingSize, setAddingSize] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteProblem, setDeleteProblem] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([getGlass(db, id), listGlassSizes(db, id)]).then(([g, z]) => {
+      Promise.all([getGlass(db, id), listGlassSizes(db, id), projectsUsingGlass(db, id)]).then(([g, z, p]) => {
         setItem(g);
         setSizes(z);
+        setUsedIn(p);
       });
     }, [db, id]),
   );
@@ -74,7 +78,7 @@ export default function GlassDetailScreen() {
     } else {
       setConfirmDelete(false);
       setDeleteProblem(
-        `${result.usedInProjects === 1 ? 'A project uses' : `${result.usedInProjects} projects use`} this glass, so it can't be deleted. Set the amount to 0 instead.`,
+        `${result.usedInProjects === 1 ? 'A project uses' : `${result.usedInProjects} projects use`} this glass (listed under Used in), so it can't be deleted. Set the amount to 0 instead.`,
       );
     }
   };
@@ -175,6 +179,25 @@ export default function GlassDetailScreen() {
             )}
           </View>
 
+          {usedIn.length > 0 && (
+            <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+              <Text style={[styles.cardLabel, { color: c.muted }]}>USED IN</Text>
+              {usedIn.map((p) => (
+                <Pressable
+                  key={p.id}
+                  onPress={() => router.push({ pathname: '/projects/[id]', params: { id: p.id } })}
+                  accessibilityRole="button"
+                  style={styles.usedRow}
+                >
+                  <Text style={[styles.usedName, { color: c.accent }]} numberOfLines={1}>
+                    {p.name}
+                  </Text>
+                  <StatusPill kind={p.kind} status={p.status} />
+                </Pressable>
+              ))}
+            </View>
+          )}
+
           <ShoppingButton
             sourceType="glass"
             sourceId={item.id}
@@ -215,6 +238,8 @@ function Photo({ uri, caption }: { uri: string; caption?: string }) {
 const styles = StyleSheet.create({
   cardLabel: { fontSize: type.small, fontWeight: '700', letterSpacing: 0.8 },
   addSize: { minHeight: 44, justifyContent: 'center' },
+  usedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, minHeight: 44 },
+  usedName: { flex: 1, fontSize: type.body, fontWeight: '700' },
   addSizeText: { fontSize: type.label, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.lg },
   content: { padding: space.md },

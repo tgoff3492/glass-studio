@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Glass Studio</title>
+    <!--
+      The on-device database needs cross-origin isolation in the browser.
+      GitHub Pages can't send those headers, so this service worker adds them.
+      Only the web preview uses this; the iPhone and iPad app doesn't.
+    -->
+    <script src="/glass-studio/coi-serviceworker.js"></script>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        overflow: hidden;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  <link rel="icon" href="/glass-studio/favicon.ico"/></head>
+
+  <body>
+    <noscript> You need to enable JavaScript to run this app. </noscript>
+    <div id="root"></div>
+  <script src="/glass-studio/_expo/static/js/web/__expo-metro-runtime-8c088df87a31e4e6accd81c554ec290d.js" defer></script><script src="/glass-studio/_expo/static/js/web/__common-9cb29b9bf508add303e84d1a9e060938.js" defer></script><script src="/glass-studio/_expo/static/js/web/entry-240656a95779860637c62c873ea68597.js" defer></script>
+</body>
+</html>

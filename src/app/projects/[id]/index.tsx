@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,6 @@ import { CoeBanner, StatusPill } from '@/components/projects/ProjectBits';
 import { SupplyThumb } from '@/components/supplies/SupplyBits';
 import { Button, Chip, ChipRow, Column } from '@/components/ui';
 import {
-  addProjectMinutes,
   addProjectPhoto,
   deleteProject,
   deleteProjectPhoto,
@@ -26,14 +25,12 @@ import {
   returnSupply,
   setPatternPhoto,
   setProjectStatus,
-  startProjectTimer,
-  stopProjectTimer,
   type ProjectGlassLine,
   type ProjectSupplyLine,
 } from '@/db/projectsRepo';
 import type { Photo, Project } from '@/db/types';
 import { formatQuantity } from '@/domain/glass';
-import { formatMinutes, kindLabel, minutesSoFar, projectCoeWarning, statusSteps } from '@/domain/projects';
+import { kindLabel, projectCoeWarning, statusSteps } from '@/domain/projects';
 import { supplyTitle } from '@/domain/supplies';
 import { addPhoto, deletePhoto, photoProblem, type PhotoSource } from '@/lib/photos';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
@@ -46,7 +43,6 @@ export default function ProjectScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<Loaded | null | undefined>(undefined);
-  const [now, setNow] = useState(() => new Date().toISOString());
   const [viewing, setViewing] = useState<Photo | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -59,7 +55,6 @@ export default function ProjectScreen() {
     }
     const [glass, supplies, photos] = await Promise.all([listProjectGlass(db, id), listProjectSupplies(db, id), listProjectPhotos(db, id)]);
     setData({ project, glass, supplies, photos });
-    setNow(new Date().toISOString());
   }, [db, id]);
 
   useFocusEffect(
@@ -67,14 +62,6 @@ export default function ProjectScreen() {
       load();
     }, [load]),
   );
-
-  // Keep the running timer's total fresh.
-  const running = Boolean(data?.project.timer_started_at);
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => setNow(new Date().toISOString()), 15000);
-    return () => clearInterval(t);
-  }, [running]);
 
   if (data === undefined) {
     return (
@@ -95,7 +82,6 @@ export default function ProjectScreen() {
 
   const { project, glass, supplies, photos } = data;
   const warning = projectCoeWarning(project.kind, glass);
-  const minutes = minutesSoFar(project, now);
   const after = (fn: () => Promise<unknown>) => async () => {
     await fn();
     await load();
@@ -198,33 +184,6 @@ export default function ProjectScreen() {
                 </View>
               ))
             )}
-          </Section>
-
-          <Section title="Time">
-            <View style={styles.timeRow}>
-              <View style={styles.timeText}>
-                <Text style={[styles.timeTotal, { color: c.text }]} accessibilityLiveRegion="polite">
-                  {formatMinutes(minutes)}
-                </Text>
-                {running && (
-                  <Text style={[styles.small, { color: c.coe90 }]}>
-                    {`Timer running since ${new Date(project.timer_started_at as string).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
-                  </Text>
-                )}
-              </View>
-              <Button
-                label={running ? 'Stop timer' : 'Start timer'}
-                variant={running ? 'primary' : 'secondary'}
-                onPress={after(() => (running ? stopProjectTimer(db, project.id) : startProjectTimer(db, project.id)))}
-                style={styles.timerButton}
-              />
-            </View>
-            <ChipRow>
-              <Chip label="+15 min" onPress={after(() => addProjectMinutes(db, project.id, 15))} />
-              <Chip label="+30 min" onPress={after(() => addProjectMinutes(db, project.id, 30))} />
-              <Chip label="+1 hour" onPress={after(() => addProjectMinutes(db, project.id, 60))} />
-              <Chip label="−15 min" onPress={after(() => addProjectMinutes(db, project.id, -15))} />
-            </ChipRow>
           </Section>
 
           <Section title="Photos">
@@ -363,10 +322,6 @@ const styles = StyleSheet.create({
   lineAmount: { fontSize: type.label, fontWeight: '600', fontVariant: ['tabular-nums'] },
   small_btn: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: space.sm, borderRadius: 10, borderWidth: 1 },
   smallBtnText: { fontSize: type.small, fontWeight: '800' },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  timeText: { flex: 1, gap: 2 },
-  timeTotal: { fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  timerButton: { paddingHorizontal: space.md },
   subhead: { fontSize: type.label, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   gridItem: { width: '31%', minWidth: 96, gap: 2 },

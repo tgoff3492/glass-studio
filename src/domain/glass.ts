@@ -14,6 +14,7 @@ export const GLASS_KINDS: { value: GlassKind; label: string; plural: string }[] 
   { value: 'stringer', label: 'Stringer', plural: 'Stringers' },
   { value: 'noodle', label: 'Noodle', plural: 'Noodles' },
   { value: 'confetti', label: 'Confetti', plural: 'Confetti' },
+  { value: 'dichroic', label: 'Dichroic', plural: 'Dichroic' },
   { value: 'scrap', label: 'Scrap', plural: 'Scrap' },
 ];
 
@@ -81,6 +82,7 @@ export const UNITS_FOR_KIND: Record<GlassKind, QuantityUnit[]> = {
   noodle: ['oz', 'piece'],
   confetti: ['oz', 'g', 'jar'],
   scrap: ['lb', 'oz', 'piece'],
+  dichroic: ['piece', 'sq_in', 'sheet'],
 };
 
 /** How much one tap of + or − changes the quantity. */
@@ -100,7 +102,7 @@ export const STEP_FOR_UNIT: Record<QuantityUnit, number> = {
 };
 
 /** Kinds that only exist for fusing, so their COE always matters. */
-const FUSING_ONLY: GlassKind[] = ['frit', 'powder', 'stringer', 'noodle', 'confetti'];
+const FUSING_ONLY: GlassKind[] = ['frit', 'powder', 'stringer', 'noodle', 'confetti', 'dichroic'];
 
 export function kindLabel(kind: GlassKind): string {
   return GLASS_KINDS.find((k) => k.value === kind)?.label ?? kind;

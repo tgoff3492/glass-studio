@@ -9,7 +9,7 @@ import { ProjectThumb, StatusPill } from '@/components/projects/ProjectBits';
 import { Button, Chip, Column } from '@/components/ui';
 import { listProjects, type ProjectListItem } from '@/db/projectsRepo';
 import type { ProjectKind } from '@/db/types';
-import { formatMinutes, kindLabel, minutesSoFar } from '@/domain/projects';
+import { kindLabel } from '@/domain/projects';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
 
 type Show = 'active' | 'done' | 'all';
@@ -112,8 +112,7 @@ export default function ProjectsScreen() {
 
 function ProjectRow({ item }: { item: ProjectListItem }) {
   const c = useColors();
-  const minutes = minutesSoFar(item, new Date().toISOString());
-  const meta = [kindLabel(item.kind), item.glass_count > 0 ? `${item.glass_count} glass` : null, minutes > 0 ? formatMinutes(minutes) : null]
+  const meta = [kindLabel(item.kind), item.glass_count > 0 ? `${item.glass_count} glass` : null]
     .filter(Boolean)
     .join(' · ');
   return (
@@ -133,12 +132,6 @@ function ProjectRow({ item }: { item: ProjectListItem }) {
           </Text>
           <View style={styles.pillRow}>
             <StatusPill kind={item.kind} status={item.status} />
-            {item.timer_started_at && (
-              <View style={styles.timing}>
-                <Ionicons name="timer-outline" size={16} color={c.coe90} />
-                <Text style={[styles.timingText, { color: c.coe90 }]}>Timer running</Text>
-              </View>
-            )}
           </View>
         </View>
         <Ionicons name="chevron-forward" size={22} color={c.muted} />
@@ -163,8 +156,6 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: type.body, fontWeight: '700' },
   rowSub: { fontSize: type.label },
   pillRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
-  timing: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  timingText: { fontSize: type.small, fontWeight: '700' },
   sep: { height: StyleSheet.hairlineWidth },
   empty: { gap: space.md, paddingTop: space.xl },
   emptyTitle: { fontSize: type.heading, fontWeight: '700' },

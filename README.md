@@ -18,11 +18,15 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the build order.
 
 Phase 0 (foundation) is in place: the app shell with Glass, Supplies, Projects and Kiln tabs, the local database and its schema, and photo storage. Cloud backup and sign-in are still to come.
 
-Phase 1 (glass inventory) is built: add, edit and delete sheet glass, frit, powder, stringers, noodles, confetti and scrap; COE on every item, required for fusing-only glass; sheets counted by size ("3 × 12×12 · 4 × 6×12") with per-size +/− and searchable sizes, or as a plain count; sheet and fired photos; quick +/− for quantity; search by color, maker or code; filters by kind, COE and color family; and barcode scanning (a known label opens its glass, a new one can be added or linked; codes can also be typed).
+Phase 1 (glass inventory) is built: add, edit and delete sheet glass, frit, powder, stringers, noodles, confetti, dichroic and scrap; COE on every item, required for fusing-only glass; sheets counted by size ("3 × 12×12 · 4 × 6×12") with per-size +/− and searchable sizes, or as a plain count; sheet and fired photos; quick +/− for quantity; search by color, maker or code; filters by kind, COE and color family; and barcode scanning (a known label opens its glass, a new one can be added or linked; codes can also be typed).
 
-Phase 2 (supplies and shopping) is built: stained-glass supplies (foil, solder, came, flux, patina, grinder bits) and fusing supplies (kiln wash, fiber paper, shelf paper, molds, dichroic), each with an optional low-stock reminder; a shopping list where running-low supplies appear on their own, plus anything added by hand or from a glass or supply page.
+Phase 2 (supplies and shopping) is built: stained-glass supplies (foil, solder, came, flux, patina, grinder bits) and fusing supplies (kiln wash, fiber paper, shelf paper, molds), each with an optional low-stock reminder; a shopping list where running-low supplies appear on their own, plus anything added by hand or from a glass or supply page.
 
-Phase 3 (projects) is built: stained or fused projects with status steps that fit each craft, pattern and progress photos, glass and supplies pulled from inventory (by size for sized sheets) with put-back, a COE warning for fused pieces before and after mixing 90 and 96, a bench timer that survives closing the app plus quick time buttons, and delete that either returns materials or leaves them used. Glass pages list the projects that use them. The Kiln tab still shows what's coming.
+Phase 3 (projects) is built: stained or fused projects with status steps that fit each craft, pattern and progress photos, glass and supplies pulled from inventory (by size for sized sheets) with put-back, a COE warning for fused pieces before and after mixing 90 and 96, and delete that either returns materials or leaves them used. Glass pages list the projects that use them. The Kiln tab still shows what's coming.
+
+## Layout
+
+Four tabs: **Inventory** (a Glass / Supplies switch), **Shopping** (with a badge counting what's to buy), **Projects** and **Kiln**. Photos accept JPEG, PNG and HEIC; in the web preview, HEIC is converted to JPEG and "Take photo" opens the camera on phones and tablets.
 
 ## Web preview
 
@@ -40,7 +44,7 @@ A browser version of the app is published at https://tgoff3492.github.io/glass-s
 ```
 src/
   app/            screens (every file is a route)
-    (tabs)/       Glass, Supplies, Projects, Kiln
+    (tabs)/       Inventory (Glass / Supplies), Shopping, Projects, Kiln
   components/     shared UI
   db/             types, migrations, database setup
   domain/         rules about glass, such as COE compatibility

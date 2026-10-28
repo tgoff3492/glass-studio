@@ -74,3 +74,11 @@ test('round-trips an item through the form', () => {
   assert.ok(again.ok);
   if (again.ok) assert.deepEqual(again.value, r.value);
 });
+
+test('dichroic is fusing glass, so it needs a COE', () => {
+  const r = validateGlassInput({ ...emptyGlassInput('dichroic'), color_name: 'Rainbow on black', quantity: '4' });
+  assert.equal(r.ok, false);
+  const ok = validateGlassInput({ ...emptyGlassInput('dichroic'), color_name: 'Rainbow on black', quantity: '4', coe: 90 });
+  assert.ok(ok.ok);
+  if (ok.ok) assert.equal(ok.value.unit, 'piece');
+});

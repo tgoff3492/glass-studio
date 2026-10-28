@@ -14,6 +14,7 @@ import type { Supply } from '@/db/types';
 import { UNIT_LABELS, formatQuantity } from '@/domain/glass';
 import { categoryInfo, stockLevel, supplyTitle } from '@/domain/supplies';
 import { deletePhoto } from '@/lib/photos';
+import { shoppingChanged } from '@/lib/shoppingCount';
 import { space, type, useColors } from '@/theme/theme';
 
 export default function SupplyDetailScreen() {
@@ -51,6 +52,7 @@ export default function SupplyDetailScreen() {
   const changeQuantity = async (delta: number) => {
     const saved = await setSupplyQuantity(db, item.id, item.quantity + delta);
     setItem({ ...item, quantity: saved });
+    shoppingChanged();
   };
 
   const remove = async () => {

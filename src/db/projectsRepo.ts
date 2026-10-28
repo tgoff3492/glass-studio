@@ -1,5 +1,5 @@
 import { formatQuantity } from '../domain/glass.ts';
-import { minutesBetween, statusChange, statusForKind, type ProjectFields } from '../domain/projects.ts';
+import { statusChange, statusForKind, type ProjectFields } from '../domain/projects.ts';
 import { normalizeSize, sizeLabel } from '../domain/sizes.ts';
 import { changeGlassSize, getGlass, listGlassSizes, setGlassQuantity, type QueryDb } from './glassRepo.ts';
 import { newId, nowIso } from './ids.ts';
@@ -89,34 +89,6 @@ export async function setProjectStatus(db: QueryDb, id: string, status: ProjectS
 
 export async function setPatternPhoto(db: QueryDb, id: string, uri: string | null): Promise<void> {
   await db.runAsync('UPDATE projects SET pattern_photo_uri = ?, updated_at = ? WHERE id = ?', [uri, nowIso(), id]);
-}
-
-// ---------- time ----------
-
-/** Adds (or with a negative number, takes off) minutes. Total never goes below zero. */
-export async function addProjectMinutes(db: QueryDb, id: string, minutes: number): Promise<void> {
-  await db.runAsync('UPDATE projects SET minutes_spent = MAX(0, minutes_spent + ?), updated_at = ? WHERE id = ?', [
-    Math.round(minutes),
-    nowIso(),
-    id,
-  ]);
-}
-
-export async function startProjectTimer(db: QueryDb, id: string, at: string = nowIso()): Promise<void> {
-  await db.runAsync('UPDATE projects SET timer_started_at = COALESCE(timer_started_at, ?), updated_at = ? WHERE id = ?', [at, nowIso(), id]);
-}
-
-/** Stops the timer and adds the time it ran. Returns the minutes added. */
-export async function stopProjectTimer(db: QueryDb, id: string, at: string = nowIso()): Promise<number> {
-  const p = await getProject(db, id);
-  if (!p?.timer_started_at) return 0;
-  const added = minutesBetween(p.timer_started_at, at);
-  await db.runAsync('UPDATE projects SET minutes_spent = minutes_spent + ?, timer_started_at = NULL, updated_at = ? WHERE id = ?', [
-    added,
-    nowIso(),
-    id,
-  ]);
-  return added;
 }
 
 // ---------- glass used ----------

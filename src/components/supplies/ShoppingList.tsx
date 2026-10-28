@@ -9,6 +9,7 @@ import { Button, Column } from '@/components/ui';
 import { addShoppingItem, clearDoneShopping, deleteShoppingItem, listShopping, setShoppingDone } from '@/db/shoppingRepo';
 import { listSupplies } from '@/db/suppliesRepo';
 import type { ShoppingItem, Supply } from '@/db/types';
+import { shoppingChanged } from '@/lib/shoppingCount';
 import { lowStockNote, supplyTitle } from '@/domain/supplies';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
 
@@ -34,6 +35,7 @@ export function ShoppingList({ onChanged }: { onChanged?: () => void }) {
 
   const changed = async () => {
     await load();
+    shoppingChanged();
     onChanged?.();
   };
 

@@ -6,6 +6,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/ui';
 import { addShoppingItem, openItemFor } from '@/db/shoppingRepo';
 import type { ShoppingSource } from '@/db/types';
+import { shoppingChanged } from '@/lib/shoppingCount';
 import { space, type, useColors } from '@/theme/theme';
 
 type Props = { sourceType: ShoppingSource; sourceId: string; label: string };
@@ -36,6 +37,7 @@ export function ShoppingButton({ sourceType, sourceId, label }: Props) {
       onPress={async () => {
         await addShoppingItem(db, { label, source_type: sourceType, source_id: sourceId });
         setOnList(true);
+        shoppingChanged();
       }}
     />
   );

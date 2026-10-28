@@ -61,12 +61,13 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
     if (clears.some((k) => errors[k])) setErrors((prev) => ({ ...prev, ...Object.fromEntries(clears.map((k) => [k, undefined])) }));
   };
 
+  // Once she picks a unit herself, changing the kind keeps it if it still fits.
+  const [unitChosen, setUnitChosen] = useState(Boolean(itemId));
   const setKind = (kind: GlassKind) => {
     setInput((prev) => ({
       ...prev,
       kind,
-      // Keep the unit if it still makes sense, otherwise use the usual one for that kind.
-      unit: UNITS_FOR_KIND[kind].includes(prev.unit) ? prev.unit : UNITS_FOR_KIND[kind][0],
+      unit: unitChosen && UNITS_FOR_KIND[kind].includes(prev.unit) ? prev.unit : UNITS_FOR_KIND[kind][0],
     }));
     setErrors((prev) => ({ ...prev, coe: undefined }));
   };
@@ -246,7 +247,10 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
               />
               <ChipRow>
                 {UNITS_FOR_KIND[input.kind].map((u) => (
-                  <Chip key={u} label={UNIT_LABELS[u].many} selected={input.unit === u} onPress={() => set('unit', u)} />
+                  <Chip key={u} label={UNIT_LABELS[u].many} selected={input.unit === u} onPress={() => {
+                    set('unit', u);
+                    setUnitChosen(true);
+                  }} />
                 ))}
               </ChipRow>
             </View>

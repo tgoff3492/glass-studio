@@ -20,7 +20,6 @@ const ICONS: Record<SupplyCategory, IconName> = {
   fiber_paper: 'document-outline',
   shelf_paper: 'documents-outline',
   mold: 'square-outline',
-  dichroic: 'diamond-outline',
   other: 'cube-outline',
 };
 

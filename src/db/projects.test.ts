@@ -4,8 +4,6 @@ import { test } from 'node:test';
 
 import { emptyGlassInput, validateGlassInput, type GlassInput } from '../domain/glass.ts';
 import {
-  formatMinutes,
-  minutesSoFar,
   projectCoeWarning,
   statusChange,
   statusLabel,
@@ -16,7 +14,6 @@ import {
 import { emptySupplyInput, validateSupplyInput } from '../domain/supplies.ts';
 import { createGlass, deleteGlass, getGlass, listGlassSizes } from './glassRepo.ts';
 import {
-  addProjectMinutes,
   addProjectPhoto,
   createProject,
   deleteProject,
@@ -31,8 +28,6 @@ import {
   returnGlass,
   returnSupply,
   setProjectStatus,
-  startProjectTimer,
-  stopProjectTimer,
   updateProject,
   takeGlass,
   takeSupply,
@@ -79,13 +74,6 @@ test('status dates', () => {
   const reopened = statusChange({ started_on: '2026-10-01', finished_on: '2026-10-24' }, 'finishing', '2026-10-25');
   assert.equal(reopened.finished_on, null);
   assert.equal(statusChange({ started_on: null, finished_on: null }, 'idea', 'x').started_on, null);
-});
-
-test('time reads naturally', () => {
-  assert.equal(formatMinutes(45), '45 min');
-  assert.equal(formatMinutes(120), '2 h');
-  assert.equal(formatMinutes(195), '3 h 15 min');
-  assert.equal(minutesSoFar({ minutes_spent: 30, timer_started_at: '2026-10-24T10:00:00.000Z' }, '2026-10-24T10:20:00.000Z'), 50);
 });
 
 test('COE warnings only for fused work', () => {
@@ -156,7 +144,7 @@ test('supplies used and put back', async () => {
   assert.equal((await getSupply(db, foilId))?.quantity, 3);
 });
 
-test('status, edits and time', async () => {
+test('status and edits', async () => {
   const { db } = await setup();
   const p = await createProject(db, { name: 'Plate', kind: 'fused', notes: null });
   await setProjectStatus(db, p, 'firing');
@@ -171,18 +159,6 @@ test('status, edits and time', async () => {
   await setProjectStatus(db, p, 'done');
   assert.ok((await getProject(db, p))?.finished_on);
 
-  await addProjectMinutes(db, p, 30);
-  await addProjectMinutes(db, p, -45);
-  assert.equal((await getProject(db, p))?.minutes_spent, 0);
-
-  await startProjectTimer(db, p, '2026-10-24T10:00:00.000Z');
-  await startProjectTimer(db, p, '2026-10-24T10:30:00.000Z');
-  assert.equal((await getProject(db, p))?.timer_started_at, '2026-10-24T10:00:00.000Z', 'starting again keeps the first start');
-  assert.equal(await stopProjectTimer(db, p, '2026-10-24T11:15:00.000Z'), 75);
-  proj = await getProject(db, p);
-  assert.equal(proj?.minutes_spent, 75);
-  assert.equal(proj?.timer_started_at, null);
-  assert.equal(await stopProjectTimer(db, p), 0);
 });
 
 test('lists, filters and photos', async () => {

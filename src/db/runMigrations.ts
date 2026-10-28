@@ -23,14 +23,24 @@ export async function runMigrations(
 
   for (const m of [...migrations].sort((a, b) => a.version - b.version)) {
     if (m.version <= current) continue;
+    // Rebuilding a table that others link to must happen with link checks paused,
+    // or dropping the old copy would cascade into the linked rows. The pause has to
+    // be set outside the transaction; links are checked before committing.
+    if (m.rebuildsTables) await db.execAsync('PRAGMA foreign_keys = OFF;');
     await db.execAsync('BEGIN;');
     try {
       await db.execAsync(m.sql);
+      if (m.rebuildsTables) {
+        const broken = await db.getFirstAsync<{ table: string }>('PRAGMA foreign_key_check');
+        if (broken) throw new Error(`Migration ${m.version} left a broken link in ${broken.table}.`);
+      }
       await db.execAsync(`PRAGMA user_version = ${m.version};`);
       await db.execAsync('COMMIT;');
     } catch (err) {
       await db.execAsync('ROLLBACK;');
       throw err;
+    } finally {
+      if (m.rebuildsTables) await db.execAsync('PRAGMA foreign_keys = ON;');
     }
     current = m.version;
   }

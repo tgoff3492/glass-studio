@@ -27,7 +27,6 @@ export const SUPPLY_CATEGORIES: CategoryInfo[] = [
   { value: 'fiber_paper', label: 'Fiber paper', group: 'fusing', defaultName: 'Fiber paper', sizeHint: '1/8 in or 1/16 in thick', units: ['sheet', 'roll', 'sq_in'] },
   { value: 'shelf_paper', label: 'Shelf paper', group: 'fusing', defaultName: 'Thinfire shelf paper', sizeHint: '20 in × 20 in sheets', units: ['sheet', 'roll'] },
   { value: 'mold', label: 'Molds', group: 'fusing', defaultName: 'Slump mold', sizeHint: '8 in square plate', units: ['piece'] },
-  { value: 'dichroic', label: 'Dichroic', group: 'fusing', defaultName: 'Dichroic glass', sizeHint: 'COE 90 on black, 2 × 2 in', units: ['piece', 'sq_in', 'sheet'] },
   { value: 'other', label: 'Other', group: 'general', defaultName: '', sizeHint: '', units: ['piece', 'pack', 'bottle', 'roll', 'lb', 'oz'] },
 ];
 

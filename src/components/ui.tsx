@@ -22,8 +22,8 @@ type ButtonProps = {
 
 export function Button({ label, onPress, variant = 'primary', disabled, style, accessibilityHint }: ButtonProps) {
   const c = useColors();
-  const bg = variant === 'primary' ? c.accent : variant === 'danger' ? c.danger : c.surface;
-  const fg = variant === 'secondary' ? c.accent : c.accentText;
+  const bg = variant === 'primary' ? c.fill : variant === 'danger' ? c.danger : c.surface;
+  const fg = variant === 'secondary' ? c.accent : c.onFill;
   return (
     <Pressable
       onPress={onPress}
@@ -37,7 +37,7 @@ export function Button({ label, onPress, variant = 'primary', disabled, style, a
         style,
       ]}
     >
-      <Text style={[styles.buttonText, { color: variant === 'danger' ? '#FFFFFF' : fg }]}>{label}</Text>
+      <Text style={[styles.buttonText, { color: variant === 'danger' ? c.onDanger : fg }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -60,14 +60,14 @@ export function Chip({ label, selected, onPress, swatch }: ChipProps) {
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? c.accent : c.surface,
+          backgroundColor: selected ? c.fill : c.surface,
           borderColor: selected ? c.accent : c.border,
           opacity: pressed ? 0.8 : 1,
         },
       ]}
     >
       {swatch && <View style={[styles.swatch, { backgroundColor: swatch, borderColor: c.border }]} />}
-      <Text style={[styles.chipText, { color: selected ? c.accentText : c.text }]}>{label}</Text>
+      <Text style={[styles.chipText, { color: selected ? c.onFill : c.text }]}>{label}</Text>
     </Pressable>
   );
 }

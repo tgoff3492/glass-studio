@@ -3,7 +3,7 @@
 
 export type Coe = 90 | 96;
 
-export type GlassKind = 'sheet' | 'frit' | 'powder' | 'stringer' | 'noodle' | 'confetti' | 'scrap';
+export type GlassKind = 'sheet' | 'frit' | 'powder' | 'stringer' | 'noodle' | 'confetti' | 'scrap' | 'dichroic';
 
 export type GlassType =
   | 'cathedral'
@@ -76,7 +76,6 @@ export type SupplyCategory =
   | 'fiber_paper'
   | 'shelf_paper'
   | 'mold'
-  | 'dichroic'
   | 'other';
 
 export type Supply = {

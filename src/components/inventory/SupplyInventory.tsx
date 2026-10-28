@@ -3,38 +3,27 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ShoppingList } from '@/components/supplies/ShoppingList';
 import { StockBadge, SupplyThumb } from '@/components/supplies/SupplyBits';
 import { Button, Chip, Column } from '@/components/ui';
-import { countOpenShopping } from '@/db/shoppingRepo';
-import { countLowSupplies, listSupplies } from '@/db/suppliesRepo';
+import { listSupplies } from '@/db/suppliesRepo';
 import type { Supply } from '@/db/types';
 import { formatQuantity } from '@/domain/glass';
 import { SUPPLY_GROUPS, categoryInfo, type SupplyGroup } from '@/domain/supplies';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
 
-type View_ = 'stock' | 'shopping';
-
-export default function SuppliesScreen() {
+/** The Supplies side of the Inventory tab: search, filters and the list. */
+export function SupplyInventory() {
   const db = useSQLiteContext();
   const c = useColors();
-  const [view, setView] = useState<View_>('stock');
   const [items, setItems] = useState<Supply[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [toBuy, setToBuy] = useState(0);
   const [search, setSearch] = useState('');
   const [group, setGroup] = useState<SupplyGroup | null>(null);
   const [lowOnly, setLowOnly] = useState(false);
 
   const loadCounts = useCallback(async () => {
-    const [low, open, all] = await Promise.all([
-      countLowSupplies(db),
-      countOpenShopping(db),
-      db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM supplies'),
-    ]);
-    setToBuy(low + open);
+    const all = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM supplies');
     setTotal(all?.n ?? 0);
   }, [db]);
 
@@ -57,23 +46,7 @@ export default function SuppliesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
-      <Column style={styles.top}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
-            Supplies
-          </Text>
-          <Button label="+ Add" onPress={() => router.push('/supplies/new')} style={styles.addButton} accessibilityHint="Add a supply" />
-        </View>
-        <View style={[styles.segment, { backgroundColor: c.accentSoft }]} accessibilityRole="tablist">
-          <Segment label="On hand" selected={view === 'stock'} onPress={() => setView('stock')} />
-          <Segment label={toBuy > 0 ? `Shopping list (${toBuy})` : 'Shopping list'} selected={view === 'shopping'} onPress={() => setView('shopping')} />
-        </View>
-      </Column>
-
-      {view === 'shopping' ? (
-        <ShoppingList onChanged={loadCounts} />
-      ) : (
+    <View style={styles.safe}>
         <FlatList
           data={items ?? []}
           keyExtractor={(s) => s.id}
@@ -137,22 +110,7 @@ export default function SuppliesScreen() {
             )
           }
         />
-      )}
-    </SafeAreaView>
-  );
-}
-
-function Segment({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  const c = useColors();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="tab"
-      accessibilityState={{ selected }}
-      style={[styles.segmentItem, selected && { backgroundColor: c.surface, borderColor: c.border }]}
-    >
-      <Text style={[styles.segmentText, { color: selected ? c.text : c.accent }]}>{label}</Text>
-    </Pressable>
+    </View>
   );
 }
 

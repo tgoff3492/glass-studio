@@ -53,25 +53,6 @@ export function statusChange(
   };
 }
 
-/** "45 min", "2 h", "3 h 15 min". */
-export function formatMinutes(minutes: number): string {
-  const m = Math.max(0, Math.round(minutes));
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60);
-  const rest = m % 60;
-  return rest === 0 ? `${h} h` : `${h} h ${rest} min`;
-}
-
-/** Whole minutes between two ISO times, never negative. */
-export function minutesBetween(fromIso: string, toIso: string): number {
-  return Math.max(0, Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 60000));
-}
-
-/** Time spent including a running timer, for display. */
-export function minutesSoFar(p: Pick<Project, 'minutes_spent' | 'timer_started_at'>, nowIso: string): number {
-  return p.minutes_spent + (p.timer_started_at ? minutesBetween(p.timer_started_at, nowIso) : 0);
-}
-
 export type ProjectInput = { name: string; kind: ProjectKind; notes: string };
 
 export type ProjectFields = { name: string; kind: ProjectKind; notes: string | null };

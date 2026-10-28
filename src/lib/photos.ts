@@ -1,23 +1,23 @@
 import * as ImagePicker from 'expo-image-picker';
 
 import { removePhoto, storePhoto } from './photoStore';
+import type { PhotoResult, PhotoSource } from './photoTypes';
 
-export type PhotoSource = 'camera' | 'library';
+// iPhone, iPad and Android. The web preview uses photos.web.ts instead.
 
-export type PhotoResult =
-  | { status: 'saved'; uri: string }
-  | { status: 'canceled' }
-  | { status: 'denied'; source: PhotoSource }
-  | { status: 'failed'; message: string };
+export { photoProblem, type PhotoResult, type PhotoSource } from './photoTypes';
 
 const pickerOptions: ImagePicker.ImagePickerOptions = {
   mediaTypes: ['images'],
   allowsEditing: true,
   // Plenty for seeing color and texture, without filling the phone.
   quality: 0.7,
+  // iPhones shoot HEIC. Ask iOS for its most compatible version (JPEG) so the
+  // photo works everywhere, including if it's ever shared or exported.
+  preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
 };
 
-/** Takes a new photo or picks one from the library, and keeps a copy in app storage. */
+/** Takes a new photo with the camera, or picks one from the library, and keeps a copy in app storage. */
 export async function addPhoto(source: PhotoSource): Promise<PhotoResult> {
   try {
     const permission =
@@ -28,7 +28,7 @@ export async function addPhoto(source: PhotoSource): Promise<PhotoResult> {
 
     const result =
       source === 'camera'
-        ? await ImagePicker.launchCameraAsync(pickerOptions)
+        ? await ImagePicker.launchCameraAsync({ ...pickerOptions, cameraType: ImagePicker.CameraType.back })
         : await ImagePicker.launchImageLibraryAsync(pickerOptions);
     if (result.canceled) return { status: 'canceled' };
 
@@ -40,15 +40,4 @@ export async function addPhoto(source: PhotoSource): Promise<PhotoResult> {
 
 export function deletePhoto(uri: string): void {
   removePhoto(uri);
-}
-
-/** What to tell her when a photo didn't work, or null when there's nothing to say. */
-export function photoProblem(result: PhotoResult): string | null {
-  if (result.status === 'denied') {
-    return result.source === 'camera'
-      ? 'Glass Studio needs permission to use the camera. Turn it on in Settings → Glass Studio.'
-      : 'Glass Studio needs permission to see your photos. Turn it on in Settings → Glass Studio.';
-  }
-  if (result.status === 'failed') return result.message;
-  return null;
 }

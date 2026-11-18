@@ -1,10 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Tabs, usePathname } from 'expo-router';
+import { Tabs, router, usePathname } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { countLowGlass } from '@/db/glassRepo';
+import { SETTING, countEverything, getSetting, setSetting } from '@/db/settingsRepo';
 import { countOpenShopping } from '@/db/shoppingRepo';
+import { snapshotDatabase } from '@/db/snapshot';
 import { countLowSupplies } from '@/db/suppliesRepo';
 import { onShoppingChanged } from '@/lib/shoppingCount';
 import { type, useColors } from '@/theme/theme';
@@ -16,12 +19,14 @@ const tabs: { name: string; title: string; icon: IconName }[] = [
   { name: 'shopping', title: 'Shopping', icon: 'cart-outline' },
   { name: 'projects', title: 'Projects', icon: 'images-outline' },
   { name: 'kiln', title: 'Kiln', icon: 'flame-outline' },
+  { name: 'settings', title: 'Settings', icon: 'settings-outline' },
 ];
 
 export default function TabLayout() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const toBuy = useToBuyCount();
+  useOnLaunch();
   return (
     <Tabs
       screenOptions={{
@@ -66,8 +71,8 @@ function useToBuyCount(): number {
   const refresh = useCallback(() => setBump((b) => b + 1), []);
   useEffect(() => {
     let alive = true;
-    Promise.all([countLowSupplies(db), countOpenShopping(db)]).then(([low, open]) => {
-      if (alive) setN(low + open);
+    Promise.all([countLowSupplies(db), countLowGlass(db), countOpenShopping(db)]).then(([low, lowGlass, open]) => {
+      if (alive) setN(low + lowGlass + open);
     });
     return () => {
       alive = false;
@@ -75,4 +80,25 @@ function useToBuyCount(): number {
   }, [db, pathname, bump]);
   useEffect(() => onShoppingChanged(refresh), [refresh]);
   return n;
+}
+
+const WEEK = 7 * 86_400_000;
+
+/** Once per launch: show the welcome the first time, and keep a weekly copy of the records. */
+function useOnLaunch() {
+  const db = useSQLiteContext();
+  useEffect(() => {
+    (async () => {
+      const [seen, lastSnapshot, counts] = await Promise.all([
+        getSetting(db, SETTING.welcomeSeen),
+        getSetting(db, SETTING.lastSnapshotAt),
+        countEverything(db),
+      ]);
+      if (!seen) router.push('/welcome');
+      const due = !lastSnapshot || Date.now() - new Date(lastSnapshot).getTime() > WEEK;
+      if (due && counts.glass + counts.supplies + counts.projects > 0 && (await snapshotDatabase(db, 'weekly'))) {
+        await setSetting(db, SETTING.lastSnapshotAt, new Date().toISOString());
+      }
+    })().catch(() => {});
+  }, [db]);
 }

@@ -1,0 +1,238 @@
+# Bullseye Glass style codes and names, from https://www.bullseyeglass.com/about-our-glass/ (fetched 2026-11-18).
+# section | style | name
+opal|000009|Reactive Cloud Opalescent
+opal|000013|Opaque White Opalescent
+opal|000024|Tomato Red Opalescent
+opal|000025|Tangerine Orange
+opal|000034|Light Peach Cream Opalescent
+opal|000100|Black
+opal|000101|Stiff Black
+opal|000104|Glacier Blue
+opal|000108|Powder Blue
+opal|000112|Mint Green
+opal|000113|White
+opal|000114|Cobalt Blue
+opal|000116|Turquoise Blue
+opal|000117|Mineral Green
+opal|000118|Periwinkle
+opal|000119|Mink
+opal|000120|Canary Yellow
+opal|000124|Red
+opal|000125|Orange
+opal|000126|Spring Green
+opal|000127|Nougat Rod
+opal|000131|Artichoke
+opal|000132|Driftwood Gray
+opal|000136|Deco Gray
+opal|000137|French Vanilla
+opal|000138|Marzipan
+opal|000139|Almond
+opal|000141|Dark Forest Green
+opal|000142|Neo-Lavender
+opal|000143|Lacy White
+opal|000144|Teal Green
+opal|000145|Jade Green
+opal|000146|Steel Blue
+opal|000147|Deep Cobalt Blue
+opal|000148|Indigo Blue
+opal|000161|Robin's Egg Blue
+opal|000164|Egyptian Blue
+opal|000203|Woodland Brown
+opal|000206|Elephant Gray
+opal|000207|Celadon Green
+opal|000208|Dusty Blue
+opal|000212|Olive Green
+opal|000216|Light Cyan
+opal|000220|Sunflower Yellow
+opal|000221|Citronelle
+opal|000222|Avocado Green
+opal|000224|Deep Red
+opal|000225|Pimento Red
+opal|000227|Golden Green
+opal|000236|Slate Gray
+opal|000241|Moss Green
+opal|000243|Translucent White
+opal|000301|Pink
+opal|000303|Dusty Lilac
+opal|000304|Lavender
+opal|000305|Salmon Pink
+opal|000309|Cinnabar
+opal|000310|Umber
+opal|000312|Pea Pod Green
+opal|000313|Dense White
+opal|000320|Marigold Yellow
+opal|000321|Pumpkin Orange
+opal|000329|Burnt Orange
+opal|000332|Plum
+opal|000334|Gold Purple
+opal|000336|Deep Gray
+opal|000337|Butterscotch
+opal|000345|Steel Jade
+opal|000349|Gray Green
+opal|000403|Opaline
+opal|000420|Cream
+opal|000421|Petal Pink
+opal|000431|Pink Blush
+opal|000434|Purple Blush
+opal|000435|Peach Blush
+opal|000843|Opaline Casting Tint
+opal|000920|Warm White
+clear|001009|Reactive Ice Clear
+clear|001015|Clear, Silver to Gold
+clear|001016|Clear, Silver to Bronze
+clear|001019|Red Reactive Clear
+clear|001100|Clear Tekta
+clear|001101|Clear
+clear|001401|Crystal Clear
+trans|001025|Light Orange
+trans|001105|Deep Plum
+trans|001107|Light Green
+trans|001108|Aquamarine Blue
+trans|001109|Dark Rose Brown
+trans|001112|Aventurine Green
+trans|001114|Deep Royal Blue
+trans|001116|Turquoise Blue
+trans|001118|Midnight Blue
+trans|001119|Sienna
+trans|001120|Yellow
+trans|001122|Red
+trans|001125|Orange
+trans|001126|Chartreuse
+trans|001128|Deep Royal Purple
+trans|001129|Charcoal Gray
+trans|001137|Medium Amber
+trans|001138|Dark Amber
+trans|001140|Aventurine Blue
+trans|001141|Olive Green
+trans|001145|Kelly Green
+trans|001149|Aventurine Bronze
+trans|001164|Caribbean Blue
+trans|001176|Peacock Blue
+trans|001205|Light Coral
+trans|001207|Fern Green
+trans|001215|Light Pink
+trans|001217|Leaf Green
+trans|001226|Lily Pad Green
+trans|001228|Amethyst
+trans|001229|Pewter
+trans|001232|Light Fuchsia
+trans|001234|Violet
+trans|001241|Pine Green
+trans|001246|Copper Blue
+trans|001305|Sunset Coral
+trans|001311|Cranberry Pink
+trans|001320|Marigold Yellow
+trans|001321|Carnelian
+trans|001322|Garnet Red
+trans|001332|Fuchsia
+trans|001334|Gold Purple
+trans|001405|Light Plum
+trans|001406|Steel Blue
+trans|001408|Light Aquamarine Blue
+trans|001409|Light Bronze
+trans|001412|Light Aventurine Green
+trans|001414|Light Sky Blue
+trans|001416|Light Turquoise Blue
+trans|001417|Emerald Green
+trans|001419|Tan
+trans|001422|Lemon Lime Green
+trans|001426|Spring Green
+trans|001428|Light Violet
+trans|001429|Light Silver Gray
+trans|001437|Light Amber
+trans|001439|Khaki
+trans|001442|Neo-Lavender
+trans|001444|Sea Blue
+trans|001449|Oregon Gray
+trans|001464|True Blue
+trans|001806|Juniper Blue Tint
+trans|001807|Grass Green Tint
+trans|001808|Aqua Blue Tint
+trans|001814|Sapphire Blue Tint
+trans|001816|Turquoise Blue Tint
+trans|001818|Indigo Tint
+trans|001819|Brown Topaz Tint
+trans|001820|Pale Yellow Tint
+trans|001821|Erbium Pink Tint
+trans|001823|Burnt Scarlet Tint
+trans|001824|Ruby Red Tint
+trans|001826|Green Tea Tint
+trans|001827|Light Amber Tint
+trans|001829|Gray Tint
+trans|001831|Ruby Pink Tint
+trans|001834|Coral Orange Tint
+trans|001837|Medium Amber Tint
+trans|001841|Spruce Green Tint
+trans|001842|Light Neo-Lavender Shift Tint
+trans|001844|Lavender Green Shift Tint
+trans|001845|Ming Green Tint
+trans|001857|Red Amber Tint
+trans|001858|Light Rhubarb Shift Tint
+trans|001859|Rhubarb Shift Tint
+trans|001864|Gray Blue Tint
+trans|001867|Olive Smoke Tint
+trans|001877|Olivine Tint
+trans|001917|Cilantro Green Tint
+trans|001920|Lemon Tint
+trans|001932|Fuchsia Tint
+trans|001934|Copper Tint
+trans|001948|Purple Blue Tint
+trans|001964|Lavender Gray Tint
+trans|001977|Pine Green Tint
+streaky|002020|Clear, Sunflower Yellow Opalescent
+streaky|002024|Clear, Red Opalescent
+streaky|002026|Clear, Spring Green Opalescent
+streaky|002037|Clear, French Vanilla Opalescent
+streaky|002047|Clear, Deep Cobalt Blue Opalescent
+streaky|002064|Clear, Egyptian Blue Opalescent
+streaky|002100|Clear, Black Opalescent
+streaky|002105|Blue Opalescent, Plum
+streaky|002107|White, Light Green
+streaky|002108|Powder Blue Opalescent, Marine Blue
+streaky|002109|White, Dark Brown
+streaky|002112|Mint Opalescent, Aventurine Green
+streaky|002116|Turquoise Blue, Deep Royal Blue
+streaky|002121|Yellow Opal, Aventurine Green
+streaky|002123|White, Orange Opalescent
+streaky|002124|Red Opalescent, White
+streaky|002125|Yellow, Red Striker
+streaky|002128|Royal Purple, Powder Blue Opalescent
+streaky|002129|Charcoal Gray, White
+streaky|002130|Clear, White
+streaky|002137|Medium Amber, White
+streaky|002140|Aventurine Blue, Clear
+streaky|002146|Copper Blue, White
+streaky|002164|Caribbean Blue, White
+streaky|002176|Peacock Blue, White
+streaky|002209|Dark Brown, White
+streaky|002212|Olive Green Opalescent, Aventurine Green
+streaky|002213|Black, White Cascade
+streaky|002218|Aqua Blue Tint, White
+streaky|002237|Warm White, Light Amber
+streaky|002249|White, Light Silver Gray Cascade
+streaky|002250|Soft Yellow Opalescent, Red
+streaky|002302|White, Pink Opalescent
+streaky|002304|White, Lavender Blue Opalescent
+streaky|002305|White, Salmon Pink Opalescent
+streaky|002310|White, Cranberry Pink
+streaky|002311|Cranberry Pink, White
+streaky|002312|Aventurine Green, White
+streaky|002416|Light Turquoise Blue, True Blue
+streaky|002537|French Vanilla, Light Turquoise Blue Cascade & Infusion
+streaky|002941|Warm White, Pine Green Cascade
+streaky|002964|Warm White, True Blue Cascade
+streaky|002971|Petrified Wood
+streaky|003026|Cranberry Pink, Royal Blue, Spring Green, White
+streaky|003045|Azure Blue Opalescent, Jade Green Opalescent, Neo-Lavender
+streaky|003086|White, Turquoise Blue, Midnight Blue
+streaky|003100|Clear, White, Black
+streaky|003116|Clear, Turquoise Blue, White
+streaky|003123|White, Orange Opalescent, Aventurine Green
+streaky|003126|Cranberry, Royal Blue, Spring Green
+streaky|003203|Woodland Brown Opalescent, Ivory, Black
+streaky|003212|Olive Green Opalescent, Aventurine Green, Dark Rose Brown
+streaky|003328|White, Deep Royal Purple, Cranberry Pink
+streaky|003334|Cranberry Pink, Gold Purple, White
+streaky|003345|Cranberry Pink, Emerald Green, White
+streaky|003346|Cranberry Pink, Azure Blue, White
+streaky|003501|White, Aventurine Green, Caramel Opalescent

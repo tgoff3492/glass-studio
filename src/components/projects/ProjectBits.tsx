@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { ProjectKind, ProjectStatus } from '@/db/types';
 import { statusLabel, type CoeWarning } from '@/domain/projects';
 import { space, type, useColors } from '@/theme/theme';
+import { photoUri } from '@/lib/photoUri';
 
 /** Status as a small pill. Done reads green, everything in progress reads blue. */
 export function StatusPill({ kind, status }: { kind: ProjectKind; status: ProjectStatus }) {
@@ -21,7 +22,7 @@ export function StatusPill({ kind, status }: { kind: ProjectKind; status: Projec
 export function ProjectThumb({ uri, kind, size = 64 }: { uri: string | null; kind: ProjectKind; size?: number }) {
   const c = useColors();
   const box = { width: size, height: size, borderRadius: 10, borderColor: c.border };
-  if (uri) return <Image source={{ uri }} style={[styles.thumb, box]} contentFit="cover" />;
+  if (uri) return <Image source={{ uri: photoUri(uri) }} style={[styles.thumb, box]} contentFit="cover" />;
   return (
     <View style={[styles.thumb, styles.icon, box, { backgroundColor: c.accentSoft }]}>
       <Ionicons name={kind === 'fused' ? 'flame-outline' : 'grid-outline'} size={size * 0.45} color={c.accent} />

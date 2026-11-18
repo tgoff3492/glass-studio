@@ -20,8 +20,9 @@ flowchart TD
 Arrows mean "needs data from."
 
 ## Phase 0 · Foundation
-- App shell with simple navigation: Inventory (Glass / Supplies), Shopping, Projects, Kiln
-- Sign-in and cloud backup
+- App shell with simple navigation: Inventory (Glass / Supplies), Shopping, Projects, Kiln, Settings
+- Backup to one file and restore — built; weekly and before-update copies on the device — built
+- Sign-in and sync between her iPhone and iPad — see "Sync" below
 - Photo storage for sheets, patterns and finished pieces
 - Data model for glass, supplies, projects and firings
 - Large text and big tap targets by default; phone and tablet first
@@ -48,7 +49,20 @@ Arrows mean "needs data from."
 - COE compatibility warning for fused pieces
 - Status: idea → cutting → foiling/assembling → firing → finishing → done
 
+## Delivery — built, waiting on the Apple Developer membership
+- TestFlight builds through EAS, over-the-air fixes (docs/SHIPPING.md)
+- Crash screen, on-device error log, "Send Taylor a note"
+- App icon, splash, first-launch welcome for Kathryn
+
+## Faster entry — built
+- Built-in Bullseye and Oceanside catalog; scanned labels it knows fill the form
+- "Add another like this", "remind me when I'm down to" for glass
+- Part of a sheet: leftovers back as a smaller size or into a COE-labeled scrap bin
+- Bench timer on projects
+- Still to do: undo after a quick change, "make this again" for repeat pieces, iPad two-pane layout
+
 ## Phase 4 · Kiln log
+- Data model ready: a firing links to any number of projects (one kiln load, several pieces)
 - Schedule library: full fuse, tack fuse, contour, slump, drape, fire polish
 - Segments: rate (°F/hr), target temperature, hold time
 - Firing log linked to a project, with before/after photos and notes
@@ -65,6 +79,11 @@ Arrows mean "needs data from."
 - "What can I make with my scrap?" suggestions
 - Find a color by photo
 - Export to spreadsheet
+
+## Sync
+- Keep SQLite on the device as the source of truth, so the app works with no signal
+- Sign-in (Firebase Auth or Sign in with Apple) and sync of changed rows to the cloud, photos to cloud storage
+- Needs soft deletes (a deleted_at column) so deletions sync too
 
 ## Later
 - Social sharing, advice and community

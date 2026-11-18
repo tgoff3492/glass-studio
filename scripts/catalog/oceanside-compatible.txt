@@ -1,0 +1,283 @@
+# Oceanside Compatible (COE 96) sheet glass, from the Oceanside Compatible catalog PDF
+# https://cdn.shopify.com/s/files/1/0306/4043/9428/files/compatible-catalog.pdf (fetched 2026-11-18).
+# Retailers often write these codes as "SF" + code with a dot, e.g. 523-2W-F is sold as SF523.2W.
+# code | name | catalog type
+100S-2MM-F|Clear Smooth Thin 2MM|Transparent
+100S-5MM-F|Clear Smooth Double Thick 5MM|Transparent
+100S-F|Clear Smooth|Transparent
+100S-ICE-2MM-F|Icicle Clear Smooth Thin 2MM|Transparent
+100S-ICE-5MM-F|Icicle Clear Smooth Double Thick 5MM|Transparent
+100S-ICE-F|Icicle Clear Smooth|Transparent
+100SXTL-5MM-F|Crystal Clear Smooth Double Thick 5MM|Transparent
+100SXTL-F|Crystal Clear Smooth|Transparent
+200S-2MM-F|Solid White Opal Smooth Thin 2MM|Opalescent
+100A-F|Clear Artique|Transparent
+100C-F|Clear Cord|Transparent, Texture
+100CC-F|Clear Corsica|Transparent, Texture
+100CRACKLE-F|Clear Crackle|Transparent, Texture
+100CZ-F|Clear Corteza|Transparent, Texture
+100G-F|Clear Granite|Transparent, Texture
+100GG-F|Clear Crystal Ice|Transparent, Texture
+100H-F|Clear Hammered|Transparent, Texture
+100HS-F|Clear (Small) Hammered|Transparent, Texture
+100K-F|Clear Krinkle|Transparent, Texture
+100QR-F|Clear Quarter-Reed|Transparent, Texture
+100RR-F|Clear Rough Rolled|Transparent, Texture
+100RW-F|Clear RainWater|Transparent, Texture
+100SN-F|Clear Satin|Transparent, Texture
+100SNSeedy-F|Clear Satin Seedy|Transparent, Texture
+100Seedy-F|Clear Seedy|Transparent, Texture
+100V-F|Clear Vecchio|Transparent, Texture
+100W-F|Clear Waterglass|Transparent, Texture
+60-00-F-GIR|Clear Gold Irid|Iridescent
+60-00-F-SIR|Clear Silver Irid|Iridescent
+100S-ICE-F-IR|Icicle Clear Smooth Irid|Iridescent
+308S-F|Clear/White|Translucent
+309S-F|Clear/White, Wispy|Translucent
+200-91W-F|White Waterglass|Opalescent, Texture
+200S-F|Solid White Opal Smooth|Opalescent
+209FL-F|FireLight White|Opalescent, Texture
+209S-F|Crystal Opal Smooth|Opalescent
+305S-F|White/Clear|Translucent
+60-003-F|Red Reactive Transparent|Transparent
+60-045-F|Red Reactive Opal|Opalescent
+307S-F|Clear/White|Semi-Translucent
+6000-81CC-F|Pearl Opal|Semi-Translucent
+Spirit-410-7S-F|Monterrey Spirit|Semi-Translucent
+110-2A-F|Pale Amber Artique|Transparent
+110-2RR-F|Pale Amber Rough Rolled|Transparent, Texture
+110-2S-F|Pale Amber Smooth Cathedral|Transparent
+110-2W-F|Pale Amber Waterglass|Transparent, Texture
+110-4S-F|Light Amber Smooth Cathedral|Transparent
+110-8A-F|Medium Amber Artique|Transparent
+110-8RR-F|Medium Amber Rough Rolled|Transparent, Texture
+110-8S-F|Medium Amber Smooth Cathedral|Transparent
+110-8W-F|Medium Amber Waterglass|Transparent, Texture
+111RR-F|Dark Amber Rough Rolled|Transparent, Texture
+111W-F|Dark Amber Waterglass|Transparent, Texture
+518-1RR-F|Bronze Rough Rolled|Transparent, Texture
+518-1S-F|Bronze Smooth Cathedral|Transparent
+518-1W-F|Bronze Waterglass|Transparent, Texture
+518-2S-F|Antique Bronze Smooth Cathedral|Transparent
+319-02S-F|Pale Amber/White, Wispy|Translucent
+319-1S-F|Light Amber/White, Wispy|Translucent
+319-6S-F|Dark Amber/White, Wispy|Translucent
+818-91S-F|Bronze/White, Wispy|Translucent
+110-1A-F|Palest Amber Artique|Translucent
+110-1S-F|Palest Amber Smooth|Translucent
+317-02S-F|Pale Amber/White|Semi-Translucent
+317-1S-F|Light Amber/White|Semi-Translucent
+317-2S-F|Medium Amber/White|Semi-Translucent
+317-6S-F|Dark Amber/White|Semi-Translucent
+318-05S-F|Light Amber Lamp Mix|Semi-Translucent
+411-15G-F|Brown/Gold Streaky, Granite|Semi-Translucent, Texture
+605-85CC-F|Sierra Red Pearl Opal|Semi-Translucent, Texture
+411-15S-F|Brown/Gold Streaky|Semi-Translucent
+6011-85CC-F|Hawkwings Pearl Opal|Semi-Translucent, Texture
+315-02S-F|White/Pale Amber|Semi-Translucent
+201-61S-F|Ivory Opalescent|Semi-Translucent
+210-71S-F|Ivory Opal Smooth|Semi-Translucent
+210-72S-F|Almond Opal Smooth|Semi-Translucent
+211-74S-F|Chestnut Brown Opal Hand Rolled|Semi-Translucent
+211-76S-F|Chocolate Opal Smooth|Semi-Translucent
+215-72S-F|Terra Cotta Opal Hand Rolled|Semi-Translucent
+315-1S-F|White/Light Amber|Semi-Translucent
+315-2S-F|White/Medium Amber|Semi-Translucent
+315-6S-F|White/Dark Amber|Semi-Translucent
+210-73S-F|Vanilla Cream Opal|Opalescent
+60-7312-F|Lime Green|Transparent
+121A-F|Light Green Artique|Transparent
+121RR-F|Light Green Rough Rolled|Transparent, Texture
+121S-F|Light Green Smooth Cathedral|Transparent
+121W-F|Light Green Waterglass|Transparent, Texture
+123H-F|Medium Green Cathedral, Hammered|Transparent, Texture
+123RR-F|Medium Green Rough Rolled|Transparent, Texture
+123S-F|Medium Green Smooth Cathedral|Transparent
+123W-F|Medium Green Waterglass|Transparent, Texture
+125RR-F|Dark Green Rough Rolled|Transparent, Texture
+125S-F|Dark Green Smooth Cathedral|Transparent
+125W-F|Dark Green Waterglass|Transparent, Texture
+422-1W-F|Deep Olive/Sea Green Waterglass|Transparent, Texture
+526-2RR-F|Moss Green Rough Rolled|Transparent, Texture
+526-2S-F|Moss Green Smooth Cathedral|Transparent
+526-2W-F|Moss Green Waterglass|Transparent, Texture
+528-2S-F|Light Olive Smooth Cathedral|Transparent
+423-1W-F|Pale Green/Aqua Blue Waterglass|Transparent, Texture
+523-2RR-F|Teal Green Rough Rolled|Transparent, Texture
+523-2S-F|Teal Green Smooth Cathedral|Transparent
+523-2W-F|Teal Green Waterglass|Transparent, Texture
+528-1A-F|Sea Green Artique|Transparent
+528-1RR-F|Sea Green Rough Rolled|Transparent, Texture
+528-1S-F|Sea Green Smooth Cathedral|Transparent
+528-1W-F|Sea Green Waterglass|Transparent, Texture
+329-1S-F|Pale Green/White, Wispy|Translucent
+329-2S-F|Light Green/White, Wispy|Translucent
+329-6S-F|Dark Green/White, Wispy|Translucent
+823-92S-F|Teal Green/White, Wispy|Translucent
+828-91S-F|Sea Green/White, Wispy|Translucent
+826-92S-F|Moss Green/White, Wispy|Translucent
+621-7S-F|Amber, Green/White|Semi-Translucent
+6021-86CC-F|RainForest Pearl Opal|Semi-Translucent, Texture
+6022-81CC-F|Key Lime Pearl Opal|Semi-Translucent, Texture
+6022-82CC-F|Congo Pearl Opal|Semi-Translucent, Texture
+6023-83CC-F|Aqua-Lime Pearl Opal|Semi-Translucent, Texture
+823-72S-F|Teal Green/White|Semi-Translucent
+826-71S-F|Lime Green/White|Semi-Translucent
+828-72S-F|Seafoam Green/White|Semi-Translucent
+128AV-F|Aventurine Green|Aventurine
+327-2S-F|Light Green/White|Semi-Translucent
+622-7S-F|Forest Green Opal|Semi-Translucent
+623-7S-F|White/Dark Green/Blue|Semi-Translucent
+OA-623-52S-F|Lagoon OpalArt|Semi-Translucent
+220-76S-F|Dark Green Opal Hand Rolled|Semi-Translucent
+222-72S-F|Pastel Green Opal Smooth|Semi-Translucent
+223-72S-F|Turquoise Green Opal Smooth|Semi-Translucent
+223-74S-F|Peacock Green Opal Smooth|Semi-Translucent
+226-72S-F|Lemongrass Opal Smooth|Semi-Translucent
+226-74S-F|Amazon Green Opal Smooth|Semi-Translucent
+228-72S-F|Celadon Opal Smooth|Semi-Translucent
+60-782-F|Olive Green Opal|Semi-Translucent
+60-726-F|Apple Jade Opal|Semi-Translucent
+60-755-F|Fern Green Opal|Semi-Translucent
+327-6S-F|Dark Green/White|Semi-Translucent
+130-8A-F|Pale Blue Artique|Transparent
+130-8RR-F|Pale Blue Rough Rolled|Transparent, Texture
+130-8S-F|Pale Blue Smooth Cathedral|Transparent
+130-8W-F|Pale Blue Waterglass|Transparent, Texture
+132A-F|Light Blue Artique|Transparent
+132RR-F|Light Blue Rough Rolled|Transparent, Texture
+132S-F|Light Blue Smooth Cathedral|Transparent
+132W-F|Light Blue Waterglass|Transparent, Texture
+134H-F|Medium Blue Cathedral, Hammered|Transparent, Texture
+134RR-F|Medium Blue Rough Rolled|Transparent, Texture
+134W-F|Medium Blue Waterglass|Transparent, Texture
+136A-F|Dark Blue Artique|Transparent
+136RR-F|Dark Blue Rough Rolled|Transparent, Texture
+136S-F|Dark Blue Smooth Cathedral|Transparent
+136W-F|Dark Blue Waterglass|Transparent, Texture
+433-1W-F|Deep Steel/Sky Blue Waterglass|Transparent, Texture
+538-2S-F|Light Steel Blue Smooth Cathedral|Transparent
+538-4S-F|Steel Blue Smooth Cathedral|Transparent
+538-4W-F|Steel Blue Waterglass|Transparent, Texture
+538-6W-F|Navy Blue Waterglass|Transparent, Texture
+532-1S-F|Caribbean Blue Smooth|Transparent
+533-1A-F|Sky Blue Artique|Transparent
+533-1RR-F|Sky Blue Rough Rolled|Transparent, Texture
+533-1S-F|Sky Blue Smooth Cathedral|Transparent
+533-1W-F|Sky Blue Waterglass|Transparent, Texture
+533-2S-F|Blue Topaz Smooth Cathedral|Transparent
+533-3RR-F|Deep Aqua Rough Rolled|Transparent, Texture
+533-3S-F|Deep Aqua Smooth Cathedral|Transparent
+533-3W-F|Deep Aqua Waterglass|Transparent, Texture
+838-94S-F|Steel Blue/White, Wispy|Translucent
+838-96S-F|Navy Blue/White, Wispy|Translucent
+339-1S-F|Pale Blue/White, Wispy|Translucent
+339-2S-F|Light Blue/White, Wispy|Translucent
+339-6S-F|Dark Blue/White, Wispy|Translucent
+633-7S-F|Sky Blue, Dark Blue/White|Translucent
+838-72S-F|Colonial Blue/White|Translucent
+838-74S-F|Steel Blue/White|Translucent
+603-81CC-F|Blue Skies|Translucent
+337-1S-F|Pale Blue/White|Translucent
+337-2S-F|Light Blue/White|Translucent
+337-6S-F|Dark Blue/White|Translucent
+6034-83CC-F|Aqua-Rose Pearl Opal|Semi-Translucent, Texture
+833-91S-F|Sky Blue/White, Wispy|Semi-Translucent
+833-93S-F|Deep Aqua/White, Wispy|Semi-Translucent
+6033-83CC-F|Blue Yonder|Semi-Translucent, Texture
+833-51S-F|White/Sky Blue|Semi-Translucent
+838-52S-F|White/Colonial Blue|Semi-Translucent
+OA-634-52S-F|Blackberry Cream OpalArt|Opalescent
+Spirit-431-76S-F|Vienna Spirit|Opalescent
+Spirit-4361-76S-F|Atlantis Spirit|Opalescent
+60-078-F|Paynes Gray Opal|Opalescent
+60-079-F|Chambray Opal|Opalescent
+335-2S-F|White/Light Blue|Opalescent
+230-71S-F|Hydrangea Opal Smooth|Opalescent
+230-72S-F|Medium Blue Opal Smooth|Opalescent
+230-76S-F|Dark Blue Opal Hand Rolled|Opalescent
+233-74S-F|Turquoise Blue Opal|Opalescent
+233-75S-F|Mariner Blue Opal Smooth|Opalescent
+138AV-F|Aventurine Blue|Aventurine
+140-8A-F|Pale Purple Artique|Transparent
+140-8RR-F|Pale Purple Rough Rolled|Transparent, Texture
+140-8S-F|Pale Purple Smooth Cathedral|Transparent
+140-8W-F|Pale Purple Waterglass|Transparent, Texture
+142RR-F|Light Purple Rough Rolled|Transparent, Texture
+142S-F|Light Purple Smooth Cathedral|Transparent
+142W-F|Light Purple Waterglass|Transparent, Texture
+146W-F|Dark Purple Waterglass|Transparent, Texture
+347-1S-F|Pale Purple/White|Translucent
+444-1W-F|Deep Violet/Pale Purple Waterglass|Transparent, Texture
+543-1S-F|Light Grape Smooth Cathedral|Transparent
+543-2A-F|Grape Artique|Transparent
+543-2RR-F|Grape Rough Rolled|Transparent, Texture
+543-2S-F|Grape Smooth Cathedral|Transparent
+543-2W-F|Grape Waterglass|Transparent, Texture
+843-71S-F|Pale Lavender/White|Semi-Translucent
+240-74S-F|Lilac Opal Smooth|Opalescent
+349-1S-F|Pale Purple/White, Wispy|Translucent
+349-2S-F|Light Purple/White, Wispy|Translucent
+349-6S-F|Dark Purple/White, Wispy|Translucent
+641-7S-F|Purple, Amber/White|Translucent
+843-92S-F|Light Grape/White, Wispy|Translucent
+60-611-F|Light Cherry Red|Transparent
+151RR-F|Cherry Red Rough Rolled|Transparent, Texture
+151S-F|Cherry Red Smooth Cathedral|Transparent
+151W-F|Cherry Red Waterglass|Transparent, Texture
+152A-F|Ruby Red Artique|Transparent
+152G-F|Ruby Red Granite|Transparent, Texture
+152RR-F|Ruby Red Rough Rolled|Transparent, Texture
+152S-F|Ruby Red Smooth Cathedral|Transparent
+152W-F|Ruby Red Waterglass|Transparent, Texture
+359-1S-F|Red/White, Wispy|Translucent
+451-20W-F|Ruby Red/Amber Waterglass|Translucent, Texture
+591-1RR-F|Pink Champagne Rough Rolled|Translucent, Texture
+591-1W-F|Pink Champagne Waterglass|Translucent, Texture
+891-81S-F|Pink Champagne, Wispy|Translucent
+357-1S-F|Red/White|Translucent
+6051-83CC-F|Autumn Flame Pearl Opal|Semi-Translucent, Texture
+250-72S-F|Red Opal Smooth|Opalescent
+675-5S-F|White/Orange-Red|Semi-Translucent
+OA-355-1S-F|Strawberries & Cream OpalArt|Opalescent
+291-61S-F|Champagne Opal Smooth|Opalescent
+891-61S-F|Pink Champagne Opal|Opalescent
+161A-F|Yellow Artique|Transparent
+161RR-F|Yellow Rough Rolled|Transparent, Texture
+161S-F|Yellow Smooth Cathedral|Transparent
+161W-F|Yellow Waterglass|Transparent, Texture
+60-355-F|Marigold Opal|Opalescent
+260-72S-F|Yellow Opal Smooth|Opalescent
+267-72S-F|Sunflower Opal Smooth|Opalescent
+365-1S-F|White/Yellow|Translucent
+367-1S-F|Yellow/White|Translucent
+369-1S-F|Yellow/White, Wispy|Translucent
+6061-81CC-F|Meadowlark Pearl Opal|Semi-Translucent, Texture
+6067-83CC-F|Mimosa Pearl Opal|Semi-Translucent, Texture
+171A-F|Orange Artique|Transparent
+171RR-F|Orange Rough Rolled|Transparent, Texture
+171S-F|Light Orange Smooth Cathedral|Transparent
+171W-F|Orange Waterglass|Transparent, Texture
+270-72S-F|Orange Opal Smooth|Opalescent
+377-1S-F|Orange/White|Translucent
+6076-83CC-F|Inferno Pearl Opal|Semi-Translucent
+379-1S-F|Orange/White, Wispy|Translucent
+271-71S-F|Persimmon Opal Smooth|Opalescent
+571-1S-F|Rust Smooth|Translucent
+180-8A-F|Pale Gray Artique|Transparent
+180-8RR-F|Pale Gray Rough Rolled|Transparent, Texture
+180-8S-F|Pale Gray Smooth Cathedral|Transparent
+180-8W-F|Pale Gray Waterglass|Transparent, Texture
+1009S-2MM-F|Thin Black Opal Smooth 2MM|Opalescent
+1009AV-F|Aventurine Black|Aventurine
+1009S-F|Black Opal Smooth|Opalescent
+1009W-F|Black Waterglass|Opalescent, Texture
+280-72S-F|Pewter Opal Smooth|Opalescent
+280-76S-F|Charcoal Opal Smooth|Opalescent
+385-2S-F|White/Light Gray|Semi-Translucent
+OA-3005-9S-F|Licorice Swirl OpalArt|Opalescent
+Spirit-4001S-F|Murano Spirit|Opalescent
+387-2S-F|Gray/White|Semi-Translucent
+389-1S-F|Pale Gray/White, Wispy|Translucent
+385-1S-F|White/Raincloud Smooth|Translucent
+60-602-F|Flame Opal|Opalescent

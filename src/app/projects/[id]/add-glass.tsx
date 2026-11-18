@@ -9,7 +9,7 @@ import { CoeBadge } from '@/components/glass/CoeBadge';
 import { GlassThumb } from '@/components/glass/GlassThumb';
 import { Button, Chip, ChipRow, Column, Field } from '@/components/ui';
 import { listGlass, listGlassSizes } from '@/db/glassRepo';
-import { getProject, listProjectGlass, takeGlass } from '@/db/projectsRepo';
+import { cutFromSheet, getProject, listProjectGlass, takeGlass, type Leftover } from '@/db/projectsRepo';
 import type { Coe, GlassItem, Project } from '@/db/types';
 import { UNIT_LABELS, formatQuantity, parseAmount } from '@/domain/glass';
 import { wouldMixCoe } from '@/domain/projects';
@@ -88,7 +88,7 @@ export default function UseGlassScreen() {
               glass={item}
               mixWarning={project.kind === 'fused' && wouldMixCoe(usedCoes, item.coe) ? (usedCoes.find((x) => x !== null) as Coe) : null}
               onUse={async (amount) => {
-                const r = await takeGlass(db, id, item.id, amount);
+                const r = 'cut' in amount ? await cutFromSheet(db, id, item.id, amount.cut, amount.leftover) : await takeGlass(db, id, item.id, amount);
                 if (r.ok) router.back();
                 return r.ok ? null : r.message;
               }}
@@ -105,7 +105,12 @@ export default function UseGlassScreen() {
   );
 }
 
-type Amount = { size: { width: number; height: number }; count: number } | { quantity: number };
+type Amount =
+  | { size: { width: number; height: number }; count: number }
+  | { quantity: number }
+  | { cut: { width: number; height: number }; leftover: Leftover };
+
+type LeftoverChoice = 'size' | 'scrap' | 'none';
 
 function AmountPanel({
   glass,
@@ -124,6 +129,10 @@ function AmountPanel({
   const [count, setCount] = useState(1);
   const [qty, setQty] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [part, setPart] = useState(false);
+  const [left, setLeft] = useState<LeftoverChoice>('scrap');
+  const [leftW, setLeftW] = useState('');
+  const [leftH, setLeftH] = useState('');
 
   useEffect(() => {
     listGlassSizes(db, glass.id).then((all) => {
@@ -145,7 +154,17 @@ function AmountPanel({
   const bySize = sizes.length > 0;
   const submit = async () => {
     setError(null);
-    if (bySize) {
+    if (bySize && part) {
+      if (!size) return setError('Choose the size you cut from.');
+      let leftover: Leftover = { kind: left === 'scrap' ? 'scrap' : 'none' };
+      if (left === 'size') {
+        const w = parseAmount(leftW);
+        const h = parseAmount(leftH);
+        if (!w || !h) return setError('Enter the size of the piece that’s left, like 6 and 8.');
+        leftover = { kind: 'size', width: w, height: h };
+      }
+      setError(await onUse({ cut: { width: size.width, height: size.height }, leftover }));
+    } else if (bySize) {
       if (!size) return setError('Choose a size.');
       setError(await onUse({ size: { width: size.width, height: size.height }, count }));
     } else {
@@ -167,7 +186,11 @@ function AmountPanel({
       )}
       {bySize ? (
         <>
-          <Text style={[styles.label, { color: c.text }]}>Which size?</Text>
+          <ChipRow>
+            <Chip label="Whole sheets" selected={!part} onPress={() => setPart(false)} />
+            <Chip label="Part of a sheet" selected={part} onPress={() => setPart(true)} />
+          </ChipRow>
+          <Text style={[styles.label, { color: c.text }]}>{part ? 'Which size did you cut from?' : 'Which size?'}</Text>
           <ChipRow>
             {sizes
               .filter((s) => s.count > 0)
@@ -183,7 +206,35 @@ function AmountPanel({
                 />
               ))}
           </ChipRow>
-          {size && (
+          {size && part && (
+            <>
+              <Text style={[styles.label, { color: c.text }]}>What’s left?</Text>
+              <ChipRow>
+                <Chip label="A smaller piece" selected={left === 'size'} onPress={() => setLeft('size')} />
+                <Chip label="Scraps" selected={left === 'scrap'} onPress={() => setLeft('scrap')} />
+                <Chip label="Nothing usable" selected={left === 'none'} onPress={() => setLeft('none')} />
+              </ChipRow>
+              {left === 'size' && (
+                <View style={styles.counter}>
+                  <View style={styles.flex}>
+                    <Field label="Width (in)" value={leftW} onChangeText={setLeftW} keyboardType="decimal-pad" />
+                  </View>
+                  <Text style={[styles.label, { color: c.muted }]}>×</Text>
+                  <View style={styles.flex}>
+                    <Field label="Height (in)" value={leftH} onChangeText={setLeftH} keyboardType="decimal-pad" />
+                  </View>
+                </View>
+              )}
+              <Text style={[styles.small, { color: c.muted }]}>
+                {left === 'size'
+                  ? 'It goes back into this glass as its own size.'
+                  : left === 'scrap'
+                    ? 'It goes in a scrap bin for this glass, with the same COE, so it’s safe to fuse later.'
+                    : 'The whole sheet comes out of inventory.'}
+              </Text>
+            </>
+          )}
+          {size && !part && (
             <View style={styles.counter}>
               <Text style={[styles.label, { color: c.text }]}>How many?</Text>
               <View style={styles.counterButtons}>
@@ -209,7 +260,9 @@ function AmountPanel({
         label={
           mixWarning !== null
             ? 'Use it anyway'
-            : bySize && size
+            : bySize && size && part
+              ? `Cut from a ${sizeLabel(size.width, size.height)}`
+              : bySize && size
               ? `Use ${count} × ${sizeLabel(size.width, size.height)}`
               : 'Use this glass'
         }
@@ -255,4 +308,5 @@ const styles = StyleSheet.create({
   count: { fontSize: type.heading, fontWeight: '700', minWidth: 32, textAlign: 'center', fontVariant: ['tabular-nums'] },
   round: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   error: { fontSize: type.label, fontWeight: '700' },
+  flex: { flex: 1 },
 });

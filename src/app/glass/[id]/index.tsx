@@ -15,10 +15,11 @@ import { changeGlassSize, deleteGlass, getGlass, listGlassSizes, setGlassQuantit
 import { projectsUsingGlass } from '@/db/projectsRepo';
 import { StatusPill } from '@/components/projects/ProjectBits';
 import type { GlassItem, ProjectKind, ProjectStatus } from '@/db/types';
-import { UNIT_LABELS, colorFamily, kindLabel, typeLabel } from '@/domain/glass';
+import { formatQuantity, UNIT_LABELS, colorFamily, kindLabel, typeLabel } from '@/domain/glass';
 import type { SheetSize } from '@/domain/sizes';
 import { discardPhotos } from '@/lib/photoCleanup';
 import { space, type, useColors } from '@/theme/theme';
+import { photoUri } from '@/lib/photoUri';
 
 export default function GlassDetailScreen() {
   const db = useSQLiteContext();
@@ -91,6 +92,7 @@ export default function GlassDetailScreen() {
   if (item.cost_per_unit_cents !== null) {
     details.push([`Price per ${UNIT_LABELS[item.unit].one}`, `$${(item.cost_per_unit_cents / 100).toFixed(2)}`]);
   }
+  if (item.min_quantity !== null) details.push(['Remind me at', formatQuantity(item.min_quantity, item.size_summary ? 'sheet' : item.unit)]);
   if (item.barcode) details.push(['Barcode', item.barcode]);
   details.push(['Added', new Date(item.created_at).toLocaleDateString()]);
 
@@ -204,6 +206,12 @@ export default function GlassDetailScreen() {
             label={[item.manufacturer, item.color_name, item.product_code && `(${item.product_code})`].filter(Boolean).join(' ')}
           />
           <Button label="Edit details" variant="secondary" onPress={() => router.push({ pathname: '/glass/[id]/edit', params: { id: item.id } })} />
+          <Button
+            label="Add another like this"
+            variant="secondary"
+            accessibilityHint="Starts new glass with the same color, maker and COE"
+            onPress={() => router.push({ pathname: '/glass/new', params: { copyFrom: item.id } })}
+          />
 
           {deleteProblem && <Text style={[styles.body, { color: c.danger }]}>{deleteProblem}</Text>}
           {confirmDelete ? (
@@ -229,7 +237,7 @@ function Photo({ uri, caption }: { uri: string; caption?: string }) {
   const c = useColors();
   return (
     <View style={styles.photoBox}>
-      <Image source={{ uri }} style={[styles.photo, { borderColor: c.border }]} contentFit="cover" accessibilityLabel={caption ?? 'Photo'} />
+      <Image source={{ uri: photoUri(uri) }} style={[styles.photo, { borderColor: c.border }]} contentFit="cover" accessibilityLabel={caption ?? 'Photo'} />
       {caption && <Text style={[styles.small, { color: c.muted }]}>{caption}</Text>}
     </View>
   );

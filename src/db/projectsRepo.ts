@@ -1,10 +1,10 @@
 import { formatQuantity } from '../domain/glass.ts';
-import { statusChange, statusForKind, type ProjectFields } from '../domain/projects.ts';
+import { benchMinutes, statusChange, statusForKind, type ProjectFields } from '../domain/projects.ts';
 import { normalizeSize, sizeLabel } from '../domain/sizes.ts';
 import { changeGlassSize, getGlass, listGlassSizes, setGlassQuantity, type QueryDb } from './glassRepo.ts';
 import { newId, nowIso } from './ids.ts';
 import { getSupply, setSupplyQuantity } from './suppliesRepo.ts';
-import type { Coe, GlassKind, Photo, Project, ProjectGlass, ProjectKind, ProjectStatus, ProjectSupply, QuantityUnit, SupplyCategory } from './types.ts';
+import type { Coe, GlassItem, GlassKind, Photo, Project, ProjectGlass, ProjectKind, ProjectStatus, ProjectSupply, QuantityUnit, SupplyCategory } from './types.ts';
 
 type Bind = string | number | null;
 
@@ -87,6 +87,29 @@ export async function setProjectStatus(db: QueryDb, id: string, status: ProjectS
   ]);
 }
 
+// ---------- bench timer ----------
+
+/** Starts the bench timer. It keeps counting if the app is closed. */
+export async function startTimer(db: QueryDb, id: string): Promise<void> {
+  await db.runAsync('UPDATE projects SET timer_started_at = ?, updated_at = ? WHERE id = ? AND timer_started_at IS NULL', [nowIso(), nowIso(), id]);
+}
+
+/** Stops the timer and adds the time to the project. */
+export async function stopTimer(db: QueryDb, id: string): Promise<void> {
+  const p = await getProject(db, id);
+  if (!p || !p.timer_started_at) return;
+  await db.runAsync('UPDATE projects SET minutes_spent = ?, timer_started_at = NULL, updated_at = ? WHERE id = ?', [
+    benchMinutes(p, new Date()),
+    nowIso(),
+    id,
+  ]);
+}
+
+/** For time she forgot to start the timer for, or a timer left running overnight. Never below zero. */
+export async function adjustMinutes(db: QueryDb, id: string, delta: number): Promise<void> {
+  await db.runAsync('UPDATE projects SET minutes_spent = MAX(0, minutes_spent + ?), updated_at = ? WHERE id = ?', [Math.round(delta), nowIso(), id]);
+}
+
 export async function setPatternPhoto(db: QueryDb, id: string, uri: string | null): Promise<void> {
   await db.runAsync('UPDATE projects SET pattern_photo_uri = ?, updated_at = ? WHERE id = ?', [uri, nowIso(), id]);
 }
@@ -112,7 +135,8 @@ export function listProjectGlass(db: QueryDb, projectId: string): Promise<Projec
 }
 
 /** "2 × 6×12" or "8 oz". */
-export function describeUse(line: Pick<ProjectGlass, 'quantity' | 'unit' | 'width_in' | 'height_in'>): string {
+export function describeUse(line: Pick<ProjectGlass, 'quantity' | 'unit' | 'width_in' | 'height_in'> & { partial?: 0 | 1 }): string {
+  if (line.partial && line.width_in !== null && line.height_in !== null) return `Part of a ${sizeLabel(line.width_in, line.height_in)}`;
   if (line.width_in !== null && line.height_in !== null) return `${line.quantity} × ${sizeLabel(line.width_in, line.height_in)}`;
   return formatQuantity(line.quantity, line.unit);
 }
@@ -145,11 +169,84 @@ export async function takeGlass(db: QueryDb, projectId: string, glassId: string,
   return { ok: true };
 }
 
-/** Puts glass from a project back into inventory and removes it from the project. */
+/** What was left after cutting pieces from a sheet. */
+export type Leftover = { kind: 'size'; width: number; height: number } | { kind: 'scrap' } | { kind: 'none' };
+
+export type CutResult = { ok: true; leftover: string | null } | { ok: false; message: string };
+
+/**
+ * Cuts the pieces for a project out of one sheet. The sheet comes out of inventory and
+ * what's left goes back as a smaller sheet, or into a scrap bin for the same glass, which
+ * keeps its color and COE so it can be fused safely later.
+ */
+export async function cutFromSheet(
+  db: QueryDb,
+  projectId: string,
+  glassId: string,
+  size: { width: number; height: number },
+  leftover: Leftover,
+): Promise<CutResult> {
+  const glass = await getGlass(db, glassId);
+  if (!glass) return { ok: false, message: "That glass isn't in the inventory anymore." };
+  const [w, h] = normalizeSize(size.width, size.height);
+  const have = (await listGlassSizes(db, glassId)).find((s) => s.width === w && s.height === h)?.count ?? 0;
+  if (have < 1) return { ok: false, message: `You don't have a ${sizeLabel(w, h)} left.` };
+
+  let left: [number, number] | null = null;
+  if (leftover.kind === 'size') {
+    left = normalizeSize(leftover.width, leftover.height);
+    if (!(left[0] > 0) || left[0] * left[1] >= w * h || left[1] > h) {
+      return { ok: false, message: `What's left has to be smaller than ${sizeLabel(w, h)}.` };
+    }
+  }
+
+  await changeGlassSize(db, glassId, w, h, -1);
+  await db.runAsync(
+    "INSERT INTO project_glass (id, project_id, glass_item_id, quantity, unit, width_in, height_in, partial) VALUES (?, ?, ?, 1, 'sheet', ?, ?, 1)",
+    [newId(), projectId, glassId, w, h],
+  );
+
+  if (left) {
+    await changeGlassSize(db, glassId, left[0], left[1], 1);
+    return { ok: true, leftover: `A ${sizeLabel(left[0], left[1])} went back with the rest.` };
+  }
+  if (leftover.kind === 'scrap') {
+    await addToScrap(db, glass);
+    return { ok: true, leftover: `The offcuts went in the scrap for ${glass.color_name}.` };
+  }
+  return { ok: true, leftover: null };
+}
+
+/** One more piece in the scrap bin for this glass; the bin is made the first time. */
+async function addToScrap(db: QueryDb, glass: GlassItem): Promise<void> {
+  const bin = await db.getFirstAsync<{ id: string; quantity: number }>(
+    `SELECT id, quantity FROM glass_items WHERE kind = 'scrap' AND unit = 'piece' AND color_name = ?
+       AND IFNULL(manufacturer, '') = IFNULL(?, '') AND coe IS ? ORDER BY created_at LIMIT 1`,
+    [glass.color_name, glass.manufacturer, glass.coe],
+  );
+  if (bin) {
+    await setGlassQuantity(db, bin.id, bin.quantity + 1);
+    return;
+  }
+  const now = nowIso();
+  await db.runAsync(
+    `INSERT INTO glass_items (id, kind, manufacturer, color_name, product_code, coe, glass_type, color_family, quantity, unit, notes, created_at, updated_at)
+     VALUES (?, 'scrap', ?, ?, ?, ?, ?, ?, 1, 'piece', ?, ?, ?)`,
+    [newId(), glass.manufacturer, glass.color_name, glass.product_code, glass.coe, glass.glass_type, glass.color_family, 'Offcuts saved from projects.', now, now],
+  );
+}
+
+/**
+ * Puts glass from a project back into inventory and removes it from the project.
+ * A sheet that was cut can't go back whole; its leftovers are already in inventory,
+ * so only the line is removed.
+ */
 export async function returnGlass(db: QueryDb, lineId: string): Promise<void> {
   const line = await db.getFirstAsync<ProjectGlass>('SELECT * FROM project_glass WHERE id = ?', [lineId]);
   if (!line) return;
-  if (line.width_in !== null && line.height_in !== null) {
+  if (line.partial) {
+    // Nothing to put back.
+  } else if (line.width_in !== null && line.height_in !== null) {
     await changeGlassSize(db, line.glass_item_id, line.width_in, line.height_in, line.quantity);
   } else {
     const glass = await getGlass(db, line.glass_item_id);
@@ -209,7 +306,8 @@ async function addLine(
 ): Promise<void> {
   const sized = table === 'project_glass';
   const existing = await db.getFirstAsync<{ id: string }>(
-    `SELECT id FROM ${table} WHERE project_id = ? AND ${itemColumn} = ?` + (sized ? ' AND width_in IS ? AND height_in IS ?' : ''),
+    // A cut sheet stays its own line, so whole sheets never merge into it.
+    `SELECT id FROM ${table} WHERE project_id = ? AND ${itemColumn} = ?` + (sized ? ' AND width_in IS ? AND height_in IS ? AND partial = 0' : ''),
     sized ? [projectId, itemId, width, height] : [projectId, itemId],
   );
   if (existing) {
@@ -277,7 +375,8 @@ export async function deleteProject(db: QueryDb, id: string, returnMaterials: bo
   await db.runAsync('DELETE FROM project_glass WHERE project_id = ?', [id]);
   await db.runAsync('DELETE FROM project_supplies WHERE project_id = ?', [id]);
   await db.runAsync("DELETE FROM photos WHERE owner_type = 'project' AND owner_id = ?", [id]);
-  await db.runAsync('UPDATE firings SET project_id = NULL WHERE project_id = ?', [id]);
+  // Firings stay in the kiln log; only their link to this piece goes.
+  await db.runAsync('DELETE FROM firing_projects WHERE project_id = ?', [id]);
   await db.runAsync('DELETE FROM projects WHERE id = ?', [id]);
   return [...photos.map((p) => p.uri), ...(project?.pattern_photo_uri ? [project.pattern_photo_uri] : [])];
 }

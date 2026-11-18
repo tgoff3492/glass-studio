@@ -32,6 +32,7 @@ const COLUMNS = [
   'unit',
   'size_summary',
   'cost_per_unit_cents',
+  'min_quantity',
   'photo_uri',
   'fired_photo_uri',
   'notes',
@@ -212,4 +213,18 @@ export async function linkBarcode(db: QueryDb, id: string, barcode: string): Pro
   if (other) return { linked: false, usedBy: other };
   await db.runAsync('UPDATE glass_items SET barcode = ?, updated_at = ? WHERE id = ?', [code, nowIso(), id]);
   return { linked: true };
+}
+
+// Glass with a "keep at least" set and at or below it, unless it's already on the shopping list by hand.
+const LOW_GLASS_SQL = `min_quantity IS NOT NULL AND quantity <= min_quantity
+  AND id NOT IN (SELECT source_id FROM shopping_items WHERE source_type = 'glass' AND done = 0 AND source_id IS NOT NULL)`;
+
+/** Favorite colors that have run low, for the shopping list. */
+export function listLowGlass(db: QueryDb): Promise<GlassItem[]> {
+  return db.getAllAsync<GlassItem>(`SELECT * FROM glass_items WHERE ${LOW_GLASS_SQL} ORDER BY color_name COLLATE NOCASE`, []);
+}
+
+export async function countLowGlass(db: QueryDb): Promise<number> {
+  const row = await db.getFirstAsync<{ n: number }>(`SELECT COUNT(*) AS n FROM glass_items WHERE ${LOW_GLASS_SQL}`, []);
+  return row?.n ?? 0;
 }

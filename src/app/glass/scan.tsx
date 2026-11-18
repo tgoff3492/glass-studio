@@ -9,6 +9,7 @@ import { CoeBadge } from '@/components/glass/CoeBadge';
 import { GlassThumb } from '@/components/glass/GlassThumb';
 import { Button, Column } from '@/components/ui';
 import { findGlassByCode, linkBarcode, listGlass } from '@/db/glassRepo';
+import { findByCode } from '@/domain/catalog';
 import type { GlassItem } from '@/db/types';
 import { formatQuantity } from '@/domain/glass';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
@@ -18,6 +19,12 @@ type Step =
   | { name: 'choose'; code: string; matches: GlassItem[] }
   | { name: 'unknown'; code: string }
   | { name: 'link'; code: string };
+
+/** "Bullseye 1101 Clear" when the code is one the built-in catalog knows. */
+function catalogMatch(code: string): string | null {
+  const m = findByCode(code);
+  return m.length === 1 ? `${m[0].maker} ${m[0].code} ${m[0].name}` : null;
+}
 
 const openItem = (id: string) => router.replace({ pathname: '/glass/[id]', params: { id } });
 
@@ -64,6 +71,9 @@ export default function ScanGlassScreen() {
             <Text style={[styles.body, { color: c.muted }]}>
               No glass has the code {step.code} yet. Add it as new glass, or link it to glass already in the inventory. After that, scanning this label brings it right up.
             </Text>
+            {catalogMatch(step.code) && (
+              <Text style={[styles.body, { color: c.text }]}>{`This looks like ${catalogMatch(step.code)}. Adding it fills that in for you.`}</Text>
+            )}
             <Button
               label="Add as new glass"
               onPress={() => router.replace({ pathname: '/glass/new', params: { barcode: step.code } })}

@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { SupplyCategory } from '@/db/types';
 import { stockLevel, type StockLevel } from '@/domain/supplies';
 import { type, useColors } from '@/theme/theme';
+import { photoUri } from '@/lib/photoUri';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -27,7 +28,7 @@ const ICONS: Record<SupplyCategory, IconName> = {
 export function SupplyThumb({ uri, category, size = 56 }: { uri: string | null; category: SupplyCategory; size?: number }) {
   const c = useColors();
   const box = { width: size, height: size, borderRadius: 10, borderColor: c.border };
-  if (uri) return <Image source={{ uri }} style={[styles.thumb, box]} contentFit="cover" />;
+  if (uri) return <Image source={{ uri: photoUri(uri) }} style={[styles.thumb, box]} contentFit="cover" />;
   return (
     <View style={[styles.thumb, styles.icon, box, { backgroundColor: c.accentSoft }]}>
       <Ionicons name={ICONS[category]} size={size * 0.5} color={c.accent} />

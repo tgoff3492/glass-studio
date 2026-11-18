@@ -118,6 +118,26 @@ export function colorFamily(value: string | null) {
 }
 
 /** "1 sheet", "2.5 sheets", "8 oz". Trims trailing zeros. */
+/** Starts a new glass from one she already has: same color, maker and COE, but none of its stock or photos. */
+export function copyGlassInput(item: GlassItem): GlassInput {
+  return {
+    ...emptyGlassInput(item.kind),
+    color_name: item.color_name,
+    manufacturer: item.manufacturer ?? '',
+    product_code: item.product_code ?? '',
+    coe: item.coe,
+    glass_type: item.glass_type,
+    color_family: item.color_family,
+    unit: item.size_summary ? 'sheet' : item.unit,
+    cost: item.cost_per_unit_cents === null ? '' : (item.cost_per_unit_cents / 100).toFixed(2),
+  };
+}
+
+/** True when a "keep at least" is set and she's at or below it. */
+export function isLow(item: Pick<GlassItem, 'quantity' | 'min_quantity'>): boolean {
+  return item.min_quantity !== null && item.min_quantity !== undefined && item.quantity <= item.min_quantity;
+}
+
 export function formatQuantity(quantity: number, unit: QuantityUnit): string {
   const n = Number(quantity.toFixed(2));
   const label = UNIT_LABELS[unit] ?? { one: unit, many: unit };
@@ -144,6 +164,8 @@ export type GlassInput = {
   quantity: string;
   unit: QuantityUnit;
   cost: string;
+  /** "Keep at least", as typed. Blank means no reminder. */
+  min_quantity: string;
   photo_uri: string | null;
   fired_photo_uri: string | null;
   notes: string;
@@ -169,6 +191,7 @@ export function emptyGlassInput(kind: GlassKind = 'sheet', barcode = ''): GlassI
     quantity: kind === 'sheet' ? '' : '1',
     unit: UNITS_FOR_KIND[kind][0],
     cost: '',
+    min_quantity: '',
     photo_uri: null,
     fired_photo_uri: null,
     notes: '',
@@ -189,6 +212,7 @@ export function inputFromItem(item: GlassItem, sizes: SheetSize[] = []): GlassIn
     quantity: sizes.length > 0 ? '' : String(item.quantity),
     unit: item.unit,
     cost: item.cost_per_unit_cents === null ? '' : (item.cost_per_unit_cents / 100).toFixed(2),
+    min_quantity: item.min_quantity === null || item.min_quantity === undefined ? '' : String(item.min_quantity),
     photo_uri: item.photo_uri,
     fired_photo_uri: item.fired_photo_uri,
     notes: item.notes ?? '',
@@ -230,6 +254,13 @@ export function validateGlassInput(input: GlassInput): ValidationResult {
     else costCents = Math.round(cost * 100);
   }
 
+  let minQuantity: number | null = null;
+  if (input.min_quantity.trim() !== '') {
+    const m = parseAmount(input.min_quantity);
+    if (m === null || m < 0) errors.min_quantity = 'Enter a number like 1 or 2, or leave it blank.';
+    else minQuantity = m;
+  }
+
   if (Object.keys(errors).length > 0) return { ok: false, errors };
 
   return {
@@ -247,6 +278,7 @@ export function validateGlassInput(input: GlassInput): ValidationResult {
       unit: bySize ? 'sheet' : input.unit,
       size_summary: bySize ? summarizeSizes(sizes) : null,
       cost_per_unit_cents: costCents,
+      min_quantity: minQuantity,
       photo_uri: input.photo_uri,
       fired_photo_uri: input.fired_photo_uri,
       notes: blankToNull(input.notes),

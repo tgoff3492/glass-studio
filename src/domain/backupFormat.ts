@@ -11,6 +11,7 @@ export const BACKUP_FORMAT = 1;
 
 export type BackupInfo = {
   format: number;
+  /** An internal marker, unchanged since the app was called Glass Studio, so old backups still restore. */
   app: 'Glass Studio';
   /** The database schema version (PRAGMA user_version) when it was saved. */
   schemaVersion: number;
@@ -59,7 +60,7 @@ export async function writeBackup(
 
 export type ReadResult = { ok: true; info: BackupInfo; database: Uint8Array; photoNames: string[] } | { ok: false; problem: string };
 
-const NOT_A_BACKUP = "That file isn't a Glass Studio backup. Choose the .zip file the app saved.";
+const NOT_A_BACKUP = "That file isn't a Katharos backup. Choose the .zip file the app saved.";
 
 /**
  * Reads a backup a piece at a time. `readChunk` returns the next bytes of the file, or an
@@ -131,10 +132,10 @@ function join(parts: Uint8Array[]): Uint8Array {
   return out;
 }
 
-/** "Glass Studio backup 2026-11-18.zip" */
+/** "Katharos backup 2026-11-18.zip" */
 export function backupFileName(date: Date): string {
   const d = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  return `Glass Studio backup ${d}.zip`;
+  return `Katharos backup ${d}.zip`;
 }
 
 /** "today", "yesterday", "12 days ago", or "never". */

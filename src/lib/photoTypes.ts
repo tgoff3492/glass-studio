@@ -10,8 +10,8 @@ export type PhotoResult =
 export function photoProblem(result: PhotoResult): string | null {
   if (result.status === 'denied') {
     return result.source === 'camera'
-      ? 'Glass Studio needs permission to use the camera. Turn it on in Settings → Glass Studio.'
-      : 'Glass Studio needs permission to see your photos. Turn it on in Settings → Glass Studio.';
+      ? 'Katharos needs permission to use the camera. Turn it on in Settings → Katharos.'
+      : 'Katharos needs permission to see your photos. Turn it on in Settings → Katharos.';
   }
   if (result.status === 'failed') return result.message;
   return null;

@@ -32,7 +32,7 @@ export default function WelcomeScreen() {
     lead: new Animated.Value(0),
     sweep: new Animated.Value(0),
     glow: new Animated.Value(0),
-    words: [0, 1, 2, 3].map(() => new Animated.Value(0)),
+    words: [0, 1, 2, 3, 4].map(() => new Animated.Value(0)),
   }));
   const [done, setDone] = useState(false);
   const [showSkip, setShowSkip] = useState(true);
@@ -111,7 +111,7 @@ export default function WelcomeScreen() {
       accessible={!done}
       accessibilityLabel={done ? undefined : 'Welcome animation. Tap to skip.'}
     >
-      <View style={[styles.stage, { width: size * 1.5, height: size * 1.5 }]}>
+      <View style={[styles.stage, { width: size * 1.35, height: size * 1.35 }]}>
         {/* Warm light behind the window once it's whole. */}
         <Animated.View
           style={[
@@ -198,14 +198,15 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={styles.words}>
-        <Animated.Text style={[styles.forName, rise(words[0])]} accessibilityRole="header">
-          For Kathryn
+        <Animated.Text style={[styles.wordmark, rise(words[0])]} accessibilityRole="header">
+          KATHAROS
         </Animated.Text>
-        <Animated.Text style={[styles.line, rise(words[1])]}>Every piece in its place.</Animated.Text>
-        <Animated.Text style={[styles.small, rise(words[2])]}>
-          Your glass, your projects and your kiln, all in one spot.{'\n'}Made with love by Taylor.
+        <Animated.Text style={[styles.forName, rise(words[1])]}>For Kathryn</Animated.Text>
+        <Animated.Text style={[styles.line, rise(words[2])]}>Every piece in its place.</Animated.Text>
+        <Animated.Text style={[styles.small, rise(words[3])]}>
+          Katharos is Greek for pure and clear, a word long tied to your name.{'\n'}Made with love by Taylor.
         </Animated.Text>
-        <Animated.View style={[styles.buttonWrap, rise(words[3])]} pointerEvents={done ? 'auto' : 'none'}>
+        <Animated.View style={[styles.buttonWrap, rise(words[4])]} pointerEvents={done ? 'auto' : 'none'}>
           <Pressable onPress={begin} accessibilityRole="button" style={({ pressed }) => [styles.button, { opacity: pressed ? 0.85 : 1 }]}>
             <Text style={styles.buttonText}>Let’s begin</Text>
           </Pressable>
@@ -267,6 +268,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: NIGHT, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   stage: { alignItems: 'center', justifyContent: 'center' },
   words: { alignItems: 'center', gap: space.sm, marginTop: -space.lg, maxWidth: 520 },
+  wordmark: { color: '#C9B6F2', fontSize: type.label, fontWeight: '700', letterSpacing: 8, textAlign: 'center', marginRight: -8 },
   forName: {
     color: '#FFF4DA',
     fontFamily: script,

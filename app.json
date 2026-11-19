@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Glass Studio",
+    "name": "Katharos",
     "slug": "glass-studio",
     "scheme": "glassstudio",
     "version": "0.2.0",
@@ -47,15 +47,15 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Glass Studio uses your photos so you can add pictures of your glass, patterns and finished pieces.",
-          "cameraPermission": "Glass Studio uses the camera so you can photograph your glass and scan barcodes on labels.",
+          "photosPermission": "Katharos uses your photos so you can add pictures of your glass, patterns and finished pieces.",
+          "cameraPermission": "Katharos uses the camera so you can photograph your glass and scan barcodes on labels.",
           "microphonePermission": false
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Glass Studio uses the camera so you can photograph your glass and scan barcodes on labels.",
+          "cameraPermission": "Katharos uses the camera so you can photograph your glass and scan barcodes on labels.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

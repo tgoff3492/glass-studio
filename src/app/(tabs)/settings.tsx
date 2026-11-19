@@ -117,7 +117,7 @@ export default function SettingsScreen() {
             <Button label="Play the welcome again" variant="secondary" onPress={() => router.push('/welcome')} />
           </Section>
 
-          <Text style={[styles.small, styles.center, { color: c.muted }]}>{`Glass Studio ${version}\nMade for Kathryn, with love, by Taylor.`}</Text>
+          <Text style={[styles.small, styles.center, { color: c.muted }]}>{`Katharos ${version}\nGreek for pure and clear, the word long tied to the name Kathryn.\nMade for Kathryn, with love, by Taylor.`}</Text>
         </Column>
 
         <Modal visible={confirmRestore} transparent animationType="fade" onRequestClose={() => setConfirmRestore(false)}>

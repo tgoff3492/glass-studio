@@ -70,7 +70,7 @@ test('describes when she last backed up', () => {
   assert.equal(describeLastBackup(new Date(2026, 10, 18, 8).toISOString(), now), 'today');
   assert.equal(describeLastBackup(new Date(2026, 10, 17, 23).toISOString(), now), 'yesterday');
   assert.equal(describeLastBackup(new Date(2026, 10, 6).toISOString(), now), '12 days ago');
-  assert.equal(backupFileName(now), 'Glass Studio backup 2026-11-18.zip');
+  assert.equal(backupFileName(now), 'Katharos backup 2026-11-18.zip');
 });
 
 test('only nudges once there is something to lose', () => {

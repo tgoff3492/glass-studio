@@ -48,8 +48,8 @@ export function BarcodeScanner({ onCode, onCancel }: Props) {
       <View style={[styles.camera, styles.ask, { backgroundColor: c.surface, borderColor: c.border }]}>
         <Text style={[styles.body, { color: c.text }]}>
           {permission.canAskAgain
-            ? 'Glass Studio needs the camera to read barcodes.'
-            : 'Camera access is off. Turn it on in Settings → Glass Studio, or type the code below.'}
+            ? 'Katharos needs the camera to read barcodes.'
+            : 'Camera access is off. Turn it on in Settings → Katharos, or type the code below.'}
         </Text>
         {permission.canAskAgain && <Button label="Allow camera" onPress={requestPermission} />}
       </View>

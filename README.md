@@ -1,8 +1,8 @@
-# Glass Studio
+# Katharos
 
 An app for stained and fused glass artists to track their glass, supplies, projects and kiln firings. Built first for one artist's home studio, on iPhone and iPad.
 
-"Glass Studio" is a working name until the app has a real one.
+The app is called **Katharos**: Greek for pure and clear, a word long tied to the name Kathryn. (It was "Glass Studio" while in development; the repository and the marker inside backup files keep that name.)
 
 ## What it does (planned)
 

@@ -8,7 +8,7 @@ export function buildNote(note: string): string {
   const version = Constants.expoConfig?.version ?? 'unknown';
   const device = `${Platform.OS === 'ios' ? (Platform.isPad ? 'iPad' : 'iPhone') : Platform.OS} ${String(Platform.Version)}`;
   const errors = readErrors().slice(0, 5);
-  const lines = [note.trim() || '(no message)', '', '—', `Glass Studio ${version} on ${device}`];
+  const lines = [note.trim() || '(no message)', '', '—', `Katharos ${version} on ${device}`];
   if (errors.length > 0) {
     lines.push('', 'Recent problems:');
     for (const e of errors) lines.push(`• ${e.at.slice(0, 16).replace('T', ' ')} ${e.where}: ${e.message}`);
@@ -22,8 +22,8 @@ export function buildNote(note: string): string {
  */
 export async function sendNote(note: string, photoUri?: string | null): Promise<boolean> {
   const message = buildNote(note);
-  const result = await Share.share(Platform.OS === 'ios' && photoUri ? { message, url: photoUri } : { message, title: 'A note about Glass Studio' }, {
-    subject: 'A note about Glass Studio',
+  const result = await Share.share(Platform.OS === 'ios' && photoUri ? { message, url: photoUri } : { message, title: 'A note about Katharos' }, {
+    subject: 'A note about Katharos',
   });
   return result.action === Share.sharedAction;
 }

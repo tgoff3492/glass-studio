@@ -29,6 +29,7 @@ async function buildBackup(db: SQLiteDatabase, into: File): Promise<BackupInfo> 
   const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const info: BackupInfo = {
     format: BACKUP_FORMAT,
+    // The file's internal marker stays 'Glass Studio' so backups made before the rename still restore.
     app: 'Glass Studio',
     schemaVersion: version?.user_version ?? LATEST_VERSION,
     createdAt: new Date().toISOString(),
@@ -65,7 +66,7 @@ export async function shareBackup(db: SQLiteDatabase): Promise<BackupOutcome> {
     await Sharing.shareAsync(file.uri, {
       mimeType: 'application/zip',
       UTI: 'public.zip-archive',
-      dialogTitle: 'Save your Glass Studio backup',
+      dialogTitle: 'Save your Katharos backup',
     });
     await setSetting(db, SETTING.lastBackupAt, info.createdAt);
     return { status: 'shared', info };

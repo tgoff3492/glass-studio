@@ -5,6 +5,8 @@ export const SETTING = {
   lastBackupAt: 'last_backup_at',
   lastSnapshotAt: 'last_snapshot_at',
   welcomeSeen: 'welcome_seen',
+  hourlyRateCents: 'hourly_rate_cents',
+  markupPercent: 'markup_percent',
 } as const;
 
 export async function getSetting(db: QueryDb, key: string): Promise<string | null> {
@@ -24,4 +26,11 @@ export async function countEverything(db: QueryDb): Promise<{ glass: number; sup
     [],
   );
   return row ?? { glass: 0, supplies: 0, projects: 0, photos: 0 };
+}
+
+/** Her pricing numbers: time per hour (cents) and markup (percent). Null when not set. */
+export async function getPricing(db: QueryDb): Promise<{ hourlyCents: number | null; markupPercent: number | null }> {
+  const [h, m] = await Promise.all([getSetting(db, SETTING.hourlyRateCents), getSetting(db, SETTING.markupPercent)]);
+  const num = (v: string | null) => (v === null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+  return { hourlyCents: num(h), markupPercent: num(m) };
 }

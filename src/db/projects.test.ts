@@ -35,6 +35,8 @@ import {
   updateProject,
   takeGlass,
   startTimer,
+  planRepeat,
+  makeAgain,
   stopTimer,
   adjustMinutes,
   takeSupply,
@@ -278,4 +280,49 @@ test('the bench timer adds up time, survives across calls, and can be adjusted',
   assert.equal(formatMinutes(95), '1 h 35 min');
   assert.equal(formatMinutes(120), '2 h');
   assert.equal(formatMinutes(5), '5 min');
+});
+
+// ---- make this again ----
+
+test('make this again counts how many more, copies the glass, and lists sheets still to cut', async () => {
+  const { db, ids, foilId } = await setup();
+  const p = await createProject(db, { name: 'Sunflower', kind: 'stained', notes: 'Use the yellow streaky.' });
+  assert.ok((await takeGlass(db, p, ids.cobalt, { size: { width: 6, height: 12 }, count: 2 })).ok); // 4 → 2 left
+  await cutFromSheet(db, p, ids.cobalt, { width: 12, height: 12 }, { kind: 'scrap' }); // 3 → 2 left
+  assert.ok((await takeSupply(db, p, foilId, 1)).ok); // 3 → 2 left
+
+  const plan = await planRepeat(db, p);
+  assert.equal(plan.canMake, 1); // 2 × 6×12 needs 2: once
+  assert.deepEqual(plan.lines.map((l) => [l.need, l.times, l.cut]), [
+    ['Cut from a 12×12', 2, true],
+    ['2 × 6×12', 1, false],
+    ['1 roll', 2, false],
+  ]);
+
+  const r = await makeAgain(db, p);
+  assert.ok(r.ok);
+  const copy = (await getProject(db, r.id))!;
+  assert.equal(copy.name, 'Sunflower #2');
+  assert.match(copy.notes ?? '', /Use the yellow streaky\.\n\nStill to cut:\n• Cobalt, from a 12×12/);
+  assert.deepEqual((await listProjectGlass(db, r.id)).map((g) => describeUse(g)), ['2 × 6×12']);
+  assert.equal((await listGlassSizes(db, ids.cobalt)).find((s) => s.width === 6)?.count, 0);
+
+  // Now there isn't enough for a third.
+  const again = await makeAgain(db, r.id);
+  assert.ok(!again.ok && /Not enough/.test(again.message));
+  assert.equal((await planRepeat(db, r.id)).canMake, 0);
+});
+
+test('copies are numbered after the highest one', async () => {
+  const { db, ids } = await setup();
+  const p = await createProject(db, { name: 'Coaster', kind: 'fused', notes: null });
+  // No materials means nothing to measure "how many more" by.
+  assert.equal((await planRepeat(db, p)).canMake, 0);
+  assert.ok((await takeGlass(db, p, ids.frit, { quantity: 2 })).ok);
+  await createProject(db, { name: 'Coaster #4', kind: 'fused', notes: null });
+  await createProject(db, { name: 'Coaster #2', kind: 'fused', notes: null });
+  assert.equal((await planRepeat(db, p)).canMake, 7);
+  const r = await makeAgain(db, p);
+  assert.ok(r.ok);
+  assert.equal((await getProject(db, r.id))?.name, 'Coaster #5');
 });

@@ -7,7 +7,9 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { GlassThumb } from '@/components/glass/GlassThumb';
 import { SupplyThumb } from '@/components/supplies/SupplyBits';
 import { Button, Column } from '@/components/ui';
+import { useUndo } from '@/components/Undo';
 import { listLowGlass } from '@/db/glassRepo';
+import { shoppingItemScopes } from '@/db/undoRepo';
 import { addShoppingItem, clearDoneShopping, deleteShoppingItem, listShopping, setShoppingDone } from '@/db/shoppingRepo';
 import { listSupplies } from '@/db/suppliesRepo';
 import type { GlassItem, ShoppingItem, Supply } from '@/db/types';
@@ -19,6 +21,7 @@ import { space, tapTarget, type, useColors } from '@/theme/theme';
 /** Running-low supplies (automatic) plus anything she adds herself. */
 export function ShoppingList({ onChanged }: { onChanged?: () => void }) {
   const db = useSQLiteContext();
+  const undo = useUndo();
   const c = useColors();
   const [low, setLow] = useState<Supply[]>([]);
   const [lowGlass, setLowGlass] = useState<GlassItem[]>([]);
@@ -137,9 +140,18 @@ export function ShoppingList({ onChanged }: { onChanged?: () => void }) {
             <Button
               label="Clear checked items"
               variant="secondary"
-              onPress={async () => {
-                await clearDoneShopping(db);
-                await changed();
+              onPress={() => {
+                const doneIds = items.filter((i) => i.done).map((i) => i.id);
+                return undo.run({
+                  key: 'shop:clear',
+                  scopes: shoppingItemScopes(doneIds),
+                  after: changed,
+                  change: async () => {
+                    const n = await clearDoneShopping(db);
+                    await changed();
+                    return `Cleared ${n} checked ${n === 1 ? 'item' : 'items'}`;
+                  },
+                });
               }}
             />
           </Section>
@@ -164,6 +176,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 function ItemRow({ item, onChange }: { item: ShoppingItem; onChange: () => void }) {
   const db = useSQLiteContext();
+  const undo = useUndo();
   const c = useColors();
   const done = item.done === 1;
   const openSource = () => {
@@ -191,10 +204,18 @@ function ItemRow({ item, onChange }: { item: ShoppingItem; onChange: () => void 
         {item.source_id && !done && <Text style={[styles.link, { color: c.accent }]}>{item.source_type === 'glass' ? 'Open glass' : 'Open supply'}</Text>}
       </Pressable>
       <Pressable
-        onPress={async () => {
-          await deleteShoppingItem(db, item.id);
-          onChange();
-        }}
+        onPress={() =>
+          undo.run({
+            key: `shop:${item.id}`,
+            scopes: shoppingItemScopes([item.id]),
+            after: onChange,
+            change: async () => {
+              await deleteShoppingItem(db, item.id);
+              onChange();
+              return `Took ${item.label} off the list`;
+            },
+          })
+        }
         accessibilityRole="button"
         accessibilityLabel={`Remove ${item.label}`}
         hitSlop={8}

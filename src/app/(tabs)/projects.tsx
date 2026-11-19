@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,6 +11,9 @@ import { listProjects, type ProjectListItem } from '@/db/projectsRepo';
 import type { ProjectKind } from '@/db/types';
 import { kindLabel } from '@/domain/projects';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
+import { SplitView, useIsOpen, useOpenItem } from '@/components/split';
+import { onDataChanged } from '@/lib/dataChanged';
+import ProjectDetailScreen from '@/app/projects/[id]/index';
 
 type Show = 'active' | 'done' | 'all';
 
@@ -37,73 +40,82 @@ export default function ProjectsScreen() {
       load();
     }, [load]),
   );
+  useEffect(() => onDataChanged(() => void load()), [load]);
 
   const newProject = () => router.push('/projects/new');
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
-      <Column style={styles.top}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
-            Projects
-          </Text>
-          <Button label="+ New" onPress={newProject} style={styles.addButton} accessibilityHint="Start a new project" />
-        </View>
-      </Column>
-      <FlatList
-        data={items ?? []}
-        keyExtractor={(p) => p.id}
-        contentContainerStyle={styles.list}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        ListHeaderComponent={
-          total > 0 ? (
-            <Column style={styles.filters}>
-              <View style={[styles.search, { backgroundColor: c.input, borderColor: c.border }]}>
-                <Ionicons name="search" size={22} color={c.muted} />
-                <TextInput
-                  value={search}
-                  onChangeText={setSearch}
-                  placeholder="Search projects"
-                  placeholderTextColor={c.muted}
-                  accessibilityLabel="Search projects"
-                  style={[styles.searchInput, { color: c.text }]}
-                  clearButtonMode="while-editing"
-                />
+      <SplitView
+        emptyText="Choose a project to see it here."
+        renderDetail={() => <ProjectDetailScreen />}
+        list={
+          <View style={styles.flex}>
+            <Column style={styles.top}>
+              <View style={styles.titleRow}>
+                <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
+                  Projects
+                </Text>
+                <Button label="+ New" onPress={newProject} style={styles.addButton} accessibilityHint="Start a new project" />
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                <Chip label="In progress" selected={show === 'active'} onPress={() => setShow('active')} />
-                <Chip label="Done" selected={show === 'done'} onPress={() => setShow('done')} />
-                <Chip label="All" selected={show === 'all'} onPress={() => setShow('all')} />
-                <Chip label="Stained" selected={kind === 'stained'} onPress={() => setKind(kind === 'stained' ? null : 'stained')} />
-                <Chip label="Fused" selected={kind === 'fused'} onPress={() => setKind(kind === 'fused' ? null : 'fused')} />
-              </ScrollView>
             </Column>
-          ) : undefined
-        }
-        ItemSeparatorComponent={() => (
-          <Column>
-            <View style={[styles.sep, { backgroundColor: c.border }]} />
-          </Column>
-        )}
-        renderItem={({ item }) => <ProjectRow item={item} />}
-        ListEmptyComponent={
-          items === null ? undefined : total === 0 ? (
-            <Column style={styles.empty}>
-              <Text style={[styles.emptyTitle, { color: c.text }]}>No projects yet</Text>
-              <Text style={[styles.body, { color: c.muted }]}>
-                Start one for each piece. Add the pattern, pull glass from inventory, and keep progress photos and time in one place.
-              </Text>
-              <Button label="Start your first project" onPress={newProject} />
-            </Column>
-          ) : (
-            <Column style={styles.empty}>
-              <Text style={[styles.emptyTitle, { color: c.text }]}>
-                {show === 'done' && !search && !kind ? 'Nothing finished yet' : show === 'active' && !search && !kind ? 'Nothing in progress' : 'Nothing matches'}
-              </Text>
-              <Button label="Show all projects" variant="secondary" onPress={() => { setShow('all'); setKind(null); setSearch(''); }} />
-            </Column>
-          )
+            <FlatList
+              data={items ?? []}
+              keyExtractor={(p) => p.id}
+              contentContainerStyle={styles.list}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              ListHeaderComponent={
+                total > 0 ? (
+                  <Column style={styles.filters}>
+                    <View style={[styles.search, { backgroundColor: c.input, borderColor: c.border }]}>
+                      <Ionicons name="search" size={22} color={c.muted} />
+                      <TextInput
+                        value={search}
+                        onChangeText={setSearch}
+                        placeholder="Search projects"
+                        placeholderTextColor={c.muted}
+                        accessibilityLabel="Search projects"
+                        style={[styles.searchInput, { color: c.text }]}
+                        clearButtonMode="while-editing"
+                      />
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+                      <Chip label="In progress" selected={show === 'active'} onPress={() => setShow('active')} />
+                      <Chip label="Done" selected={show === 'done'} onPress={() => setShow('done')} />
+                      <Chip label="All" selected={show === 'all'} onPress={() => setShow('all')} />
+                      <Chip label="Stained" selected={kind === 'stained'} onPress={() => setKind(kind === 'stained' ? null : 'stained')} />
+                      <Chip label="Fused" selected={kind === 'fused'} onPress={() => setKind(kind === 'fused' ? null : 'fused')} />
+                    </ScrollView>
+                  </Column>
+                ) : undefined
+              }
+              ItemSeparatorComponent={() => (
+                <Column>
+                  <View style={[styles.sep, { backgroundColor: c.border }]} />
+                </Column>
+              )}
+              renderItem={({ item }) => <ProjectRow item={item} />}
+              ListEmptyComponent={
+                items === null ? undefined : total === 0 ? (
+                  <Column style={styles.empty}>
+                    <Text style={[styles.emptyTitle, { color: c.text }]}>No projects yet</Text>
+                    <Text style={[styles.body, { color: c.muted }]}>
+                      Start one for each piece. Add the pattern, pull glass from inventory, and keep progress photos and time in one place.
+                    </Text>
+                    <Button label="Start your first project" onPress={newProject} />
+                  </Column>
+                ) : (
+                  <Column style={styles.empty}>
+                    <Text style={[styles.emptyTitle, { color: c.text }]}>
+                      {show === 'done' && !search && !kind ? 'Nothing finished yet' : show === 'active' && !search && !kind ? 'Nothing in progress' : 'Nothing matches'}
+                    </Text>
+                    <Button label="Show all projects" variant="secondary" onPress={() => { setShow('all'); setKind(null); setSearch(''); }} />
+                  </Column>
+                )
+              }
+            />
+          </View>
         }
       />
     </SafeAreaView>
@@ -112,15 +124,17 @@ export default function ProjectsScreen() {
 
 function ProjectRow({ item }: { item: ProjectListItem }) {
   const c = useColors();
+  const open = useOpenItem();
+  const isOpen = useIsOpen('project', item.id);
   const meta = [kindLabel(item.kind), item.glass_count > 0 ? `${item.glass_count} glass` : null]
     .filter(Boolean)
     .join(' · ');
   return (
     <Column>
       <Pressable
-        onPress={() => router.push({ pathname: '/projects/[id]', params: { id: item.id } })}
+        onPress={() => open('project', item.id)}
         accessibilityRole="button"
-        style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+        style={({ pressed }) => [styles.row, isOpen && { backgroundColor: c.accentSoft, borderRadius: 12 }, { opacity: pressed ? 0.7 : 1 }]}
       >
         <ProjectThumb uri={item.cover_uri} kind={item.kind} />
         <View style={styles.rowText}>
@@ -141,6 +155,7 @@ function ProjectRow({ item }: { item: ProjectListItem }) {
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   safe: { flex: 1 },
   top: { paddingHorizontal: space.md, paddingTop: space.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },

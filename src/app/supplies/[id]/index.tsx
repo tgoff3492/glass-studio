@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,8 +8,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QuantityCard } from '@/components/QuantityCard';
 import { ShoppingButton } from '@/components/ShoppingButton';
 import { SupplyThumb } from '@/components/supplies/SupplyBits';
+import { ScreenOptions, useDetailId, useLeave } from '@/components/split';
 import { Button, Column } from '@/components/ui';
 import { deleteSupply, getSupply, setSupplyQuantity } from '@/db/suppliesRepo';
+import { supplyScopes } from '@/db/undoRepo';
+import { useUndo } from '@/components/Undo';
 import type { Supply } from '@/db/types';
 import { UNIT_LABELS, formatQuantity } from '@/domain/glass';
 import { categoryInfo, stockLevel, supplyTitle } from '@/domain/supplies';
@@ -20,9 +23,11 @@ import { photoUri } from '@/lib/photoUri';
 
 export default function SupplyDetailScreen() {
   const db = useSQLiteContext();
+  const undo = useUndo();
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useDetailId();
+  const leave = useLeave();
   const [item, setItem] = useState<Supply | null | undefined>(undefined);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteProblem, setDeleteProblem] = useState<string | null>(null);
@@ -43,24 +48,34 @@ export default function SupplyDetailScreen() {
   if (item === null) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: 'Not found' }} />
+        <ScreenOptions options={{ title: 'Not found' }} />
         <Text style={[styles.body, { color: c.muted }]}>{"This supply isn't in the inventory anymore."}</Text>
-        <Button label="Back to supplies" variant="secondary" onPress={() => router.back()} />
+        <Button label="Back to supplies" variant="secondary" onPress={() => leave()} />
       </View>
     );
   }
 
-  const changeQuantity = async (delta: number) => {
-    const saved = await setSupplyQuantity(db, item.id, item.quantity + delta);
-    setItem({ ...item, quantity: saved });
-    shoppingChanged();
-  };
+  const changeQuantity = (delta: number) =>
+    undo.run({
+      key: `supply:${item.id}`,
+      scopes: supplyScopes(item.id),
+      after: async () => {
+        setItem(await getSupply(db, item.id));
+        shoppingChanged();
+      },
+      change: async () => {
+        const saved = await setSupplyQuantity(db, item.id, item.quantity + delta);
+        setItem({ ...item, quantity: saved });
+        shoppingChanged();
+        return `${item.name}: ${formatQuantity(saved, item.unit)}`;
+      },
+    });
 
   const remove = async () => {
     const result = await deleteSupply(db, item.id);
     if (result.deleted) {
       if (item.photo_uri) deletePhoto(item.photo_uri);
-      router.back();
+      leave();
     } else {
       setConfirmDelete(false);
       setDeleteProblem(
@@ -89,7 +104,7 @@ export default function SupplyDetailScreen() {
 
   return (
     <>
-      <Stack.Screen
+      <ScreenOptions
         options={{
           title: item.name,
           headerRight: () => (

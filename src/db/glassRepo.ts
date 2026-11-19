@@ -3,7 +3,7 @@ import { normalizeSize, normalizeSizeSearch, summarizeSizes, totalSheets, type S
 import { newId, nowIso } from './ids.ts';
 import type { Coe, GlassItem, GlassKind, GlassPiece } from './types.ts';
 
-type Bind = string | number | null;
+export type Bind = string | number | null;
 
 /** The database calls the repository needs. expo-sqlite's SQLiteDatabase satisfies this. */
 export type QueryDb = {

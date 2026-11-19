@@ -240,6 +240,55 @@ UPDATE photos SET owner_type = 'glass'
 DELETE FROM supplies WHERE category = 'dichroic';
 `,
   },
+  {
+    // Photos are saved by name ("photos/abc.jpg") instead of by full address. iOS can
+    // move the app's folder after a restore or reinstall, which would break full
+    // addresses. Also a small settings table for things like when she last backed up.
+    version: 7,
+    sql: `
+UPDATE glass_items SET photo_uri = 'photos/' || substr(photo_uri, instr(photo_uri, '/photos/') + 8)
+  WHERE photo_uri LIKE 'file:%/photos/%';
+UPDATE glass_items SET fired_photo_uri = 'photos/' || substr(fired_photo_uri, instr(fired_photo_uri, '/photos/') + 8)
+  WHERE fired_photo_uri LIKE 'file:%/photos/%';
+UPDATE supplies SET photo_uri = 'photos/' || substr(photo_uri, instr(photo_uri, '/photos/') + 8)
+  WHERE photo_uri LIKE 'file:%/photos/%';
+UPDATE projects SET pattern_photo_uri = 'photos/' || substr(pattern_photo_uri, instr(pattern_photo_uri, '/photos/') + 8)
+  WHERE pattern_photo_uri LIKE 'file:%/photos/%';
+UPDATE photos SET uri = 'photos/' || substr(uri, instr(uri, '/photos/') + 8)
+  WHERE uri LIKE 'file:%/photos/%';
+
+CREATE TABLE settings (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL
+);
+`,
+  },
+  {
+    // One kiln load holds several pieces, and one piece goes through several firings
+    // (full fuse, then slump). Firings link to projects through their own table.
+    // firings.project_id stays in the table, unused: dropping a column is the one kind of
+    // change that could fail on an older SQLite, and a failed migration means the app won't open.
+    version: 8,
+    sql: `
+CREATE TABLE firing_projects (
+  firing_id TEXT NOT NULL REFERENCES firings (id) ON DELETE CASCADE,
+  project_id TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  PRIMARY KEY (firing_id, project_id)
+);
+CREATE INDEX firing_projects_project ON firing_projects (project_id);
+INSERT INTO firing_projects (firing_id, project_id) SELECT id, project_id FROM firings WHERE project_id IS NOT NULL;
+UPDATE firings SET project_id = NULL;
+`,
+  },
+  {
+    // "Keep at least" for glass, like supplies have, so favorite colors land on the shopping list.
+    // Partial sheets: a project line can record that only part of a sheet was used.
+    version: 9,
+    sql: `
+ALTER TABLE glass_items ADD COLUMN min_quantity REAL;
+ALTER TABLE project_glass ADD COLUMN partial INTEGER NOT NULL DEFAULT 0 CHECK (partial IN (0, 1));
+`,
+  },
 ];
 
 export const LATEST_VERSION = migrations[migrations.length - 1].version;

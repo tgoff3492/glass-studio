@@ -48,6 +48,9 @@ export type GlassItem = {
   /** "3 × 12×12 · 4 × 6×12" for sheets tracked by size; null otherwise. Kept in step with glass_pieces. */
   size_summary: string | null;
   cost_per_unit_cents: number | null;
+  /** "Keep at least this many", so a favorite color lands on the shopping list. Null means no reminder. */
+  min_quantity: number | null;
+  /** Saved as "photos/abc.jpg" on a phone or tablet; see lib/photoRef.ts. */
   photo_uri: string | null;
   fired_photo_uri: string | null;
   notes: string | null;
@@ -139,6 +142,8 @@ export type ProjectGlass = {
   unit: QuantityUnit;
   width_in: number | null;
   height_in: number | null;
+  /** 1 when only part of the sheet went into the piece and the rest went back as a smaller piece or scrap. */
+  partial: 0 | 1;
 };
 
 export type ProjectSupply = {
@@ -192,10 +197,20 @@ export type ScheduleSegment = {
 
 export type Firing = {
   id: string;
-  project_id: string | null;
+  /** No longer used; see firing_projects. Kept so the version 8 migration can't fail. */
+  project_id?: null;
   schedule_id: string | null;
   fired_on: string;
   result_notes: string | null;
   created_at: string;
   updated_at: string;
 };
+
+/** Which pieces were in a firing. One load can hold several pieces; one piece can be fired several times. */
+export type FiringProject = {
+  firing_id: string;
+  project_id: string;
+};
+
+/** Small things the app remembers, such as when she last saved a backup. */
+export type Setting = { key: string; value: string };

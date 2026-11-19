@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Button, Label } from '@/components/ui';
 import { addPhoto, photoProblem, type PhotoSource } from '@/lib/photos';
 import { space, type, useColors } from '@/theme/theme';
+import { photoUri } from '@/lib/photoUri';
 
 type Props = {
   label: string;
@@ -34,7 +35,7 @@ export function PhotoSlot({ label, hint, uri, onChange }: Props) {
         {label}
       </Label>
       {uri ? (
-        <Image source={{ uri }} style={[styles.photo, { borderColor: c.border }]} contentFit="cover" accessibilityLabel={label} />
+        <Image source={{ uri: photoUri(uri) }} style={[styles.photo, { borderColor: c.border }]} contentFit="cover" accessibilityLabel={label} />
       ) : (
         <View style={[styles.photo, styles.placeholder, { borderColor: c.border, backgroundColor: c.surface }]}>
           {busy ? <ActivityIndicator color={c.accent} /> : <Text style={[styles.none, { color: c.muted }]}>No photo yet</Text>}

@@ -16,6 +16,7 @@ import { categoryInfo, stockLevel, supplyTitle } from '@/domain/supplies';
 import { deletePhoto } from '@/lib/photos';
 import { shoppingChanged } from '@/lib/shoppingCount';
 import { space, type, useColors } from '@/theme/theme';
+import { photoUri } from '@/lib/photoUri';
 
 export default function SupplyDetailScreen() {
   const db = useSQLiteContext();
@@ -101,7 +102,7 @@ export default function SupplyDetailScreen() {
       <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={[styles.content, { paddingBottom: space.xl + insets.bottom }]}>
         <Column style={styles.stack}>
           {item.photo_uri ? (
-            <Image source={{ uri: item.photo_uri }} style={[styles.photo, { borderColor: c.border }]} contentFit="cover" accessibilityLabel={item.name} />
+            <Image source={{ uri: photoUri(item.photo_uri) }} style={[styles.photo, { borderColor: c.border }]} contentFit="cover" accessibilityLabel={item.name} />
           ) : null}
 
           <View style={styles.titleRow}>

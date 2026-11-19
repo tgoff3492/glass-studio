@@ -4,6 +4,8 @@ import { test } from 'node:test';
 
 import { emptyGlassInput, validateGlassInput, type GlassInput } from '../domain/glass.ts';
 import {
+  benchMinutes,
+  formatMinutes,
   projectCoeWarning,
   statusChange,
   statusLabel,
@@ -12,7 +14,8 @@ import {
   wouldMixCoe,
 } from '../domain/projects.ts';
 import { emptySupplyInput, validateSupplyInput } from '../domain/supplies.ts';
-import { createGlass, deleteGlass, getGlass, listGlassSizes } from './glassRepo.ts';
+import { countLowGlass, createGlass, deleteGlass, getGlass, listGlassSizes, listLowGlass } from './glassRepo.ts';
+import { addShoppingItem } from './shoppingRepo.ts';
 import {
   addProjectPhoto,
   createProject,
@@ -26,10 +29,14 @@ import {
   listProjectSupplies,
   projectsUsingGlass,
   returnGlass,
+  cutFromSheet,
   returnSupply,
   setProjectStatus,
   updateProject,
   takeGlass,
+  startTimer,
+  stopTimer,
+  adjustMinutes,
   takeSupply,
 } from './projectsRepo.ts';
 import { createSupply, getSupply } from './suppliesRepo.ts';
@@ -198,4 +205,77 @@ test('deleting a project can put materials back, or leave them used', async () =
   assert.equal((await listGlassSizes(db, ids.cobalt)).find((s) => s.width === 12)?.count, 3);
   assert.equal((await getSupply(db, foilId))?.quantity, 3);
   assert.equal(await getProject(db, back), null);
+});
+
+// ---- cutting part of a sheet ----
+
+test('cutting from a sheet keeps the leftover as a smaller size', async () => {
+  const { db, ids } = await setup();
+  const p = await createProject(db, { name: 'Window', kind: 'stained', notes: null });
+  const r = await cutFromSheet(db, p, ids.cobalt, { width: 12, height: 12 }, { kind: 'size', width: 6, height: 12 });
+  assert.ok(r.ok);
+  const sizes = await listGlassSizes(db, ids.cobalt);
+  assert.deepEqual(sizes.map((s) => [s.width, s.height, s.count]), [[12, 12, 2], [6, 12, 5]]);
+  const [line] = await listProjectGlass(db, p);
+  assert.equal(describeUse(line), 'Part of a 12×12');
+  // Taking whole sheets of the same size later is its own line.
+  assert.ok((await takeGlass(db, p, ids.cobalt, { size: { width: 12, height: 12 }, count: 1 })).ok);
+  assert.equal((await listProjectGlass(db, p)).length, 2);
+});
+
+test('offcuts go to a scrap bin with the same COE, made once and reused', async () => {
+  const { db, ids } = await setup();
+  const p = await createProject(db, { name: 'Dish', kind: 'fused', notes: null });
+  await cutFromSheet(db, p, ids.cobalt, { width: 12, height: 12 }, { kind: 'scrap' });
+  await cutFromSheet(db, p, ids.cobalt, { width: 6, height: 12 }, { kind: 'scrap' });
+  const scrap = (await db.getAllAsync<{ kind: string; coe: number; quantity: number; color_name: string }>(
+    "SELECT kind, coe, quantity, color_name FROM glass_items WHERE kind = 'scrap'",
+    [],
+  )).map((r) => ({ ...r }));
+  assert.deepEqual(scrap, [{ kind: 'scrap', coe: 90, quantity: 2, color_name: 'Cobalt' }]);
+});
+
+test('a cut sheet is not put back whole', async () => {
+  const { db, ids } = await setup();
+  const p = await createProject(db, { name: 'Lamp', kind: 'stained', notes: null });
+  await cutFromSheet(db, p, ids.cobalt, { width: 12, height: 12 }, { kind: 'none' });
+  const [line] = await listProjectGlass(db, p);
+  await returnGlass(db, line.id);
+  assert.equal((await listGlassSizes(db, ids.cobalt)).find((s) => s.width === 12)?.count, 2);
+  assert.equal((await listProjectGlass(db, p)).length, 0);
+});
+
+test('the leftover must be smaller than the sheet', async () => {
+  const { db, ids } = await setup();
+  const p = await createProject(db, { name: 'X', kind: 'stained', notes: null });
+  const r = await cutFromSheet(db, p, ids.cobalt, { width: 6, height: 12 }, { kind: 'size', width: 12, height: 12 });
+  assert.equal(r.ok, false);
+  assert.equal((await listGlassSizes(db, ids.cobalt)).find((s) => s.width === 6)?.count, 4);
+});
+
+test('glass at or below its "remind me" amount is on the shopping list until added by hand', async () => {
+  const { db } = await setup();
+  const r = glassFields({ color_name: 'Clear', quantity: '1', min_quantity: '2' });
+  const id = await createGlass(db, r.value);
+  assert.deepEqual((await listLowGlass(db)).map((g) => g.id), [id]);
+  await addShoppingItem(db, { label: 'Clear', source_type: 'glass', source_id: id });
+  assert.equal(await countLowGlass(db), 0);
+});
+
+test('the bench timer adds up time, survives across calls, and can be adjusted', async () => {
+  const { db, raw } = await setup();
+  const p = await createProject(db, { name: 'Panel', kind: 'stained', notes: null });
+  await startTimer(db, p);
+  // Pretend it started 95 minutes ago.
+  raw.prepare('UPDATE projects SET timer_started_at = ? WHERE id = ?').run(new Date(Date.now() - 95 * 60_000).toISOString(), p);
+  assert.equal(benchMinutes((await getProject(db, p))!, new Date()), 95);
+  await stopTimer(db, p);
+  const stopped = (await getProject(db, p))!;
+  assert.equal(stopped.minutes_spent, 95);
+  assert.equal(stopped.timer_started_at, null);
+  await adjustMinutes(db, p, -200);
+  assert.equal((await getProject(db, p))!.minutes_spent, 0);
+  assert.equal(formatMinutes(95), '1 h 35 min');
+  assert.equal(formatMinutes(120), '2 h');
+  assert.equal(formatMinutes(5), '5 min');
 });

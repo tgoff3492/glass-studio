@@ -95,3 +95,18 @@ export function wouldMixCoe(existing: (Coe | null)[], coe: Coe | null): boolean 
   if (coe === null) return false;
   return existing.some((c) => c !== null && c !== coe);
 }
+
+/** Minutes at the bench, counting a timer that's running now. */
+export function benchMinutes(p: Pick<Project, 'minutes_spent' | 'timer_started_at'>, now: Date): number {
+  if (!p.timer_started_at) return p.minutes_spent;
+  const running = Math.max(0, Math.floor((now.getTime() - new Date(p.timer_started_at).getTime()) / 60_000));
+  return p.minutes_spent + running;
+}
+
+/** "45 min", "2 h", "3 h 10 min". */
+export function formatMinutes(total: number): string {
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}

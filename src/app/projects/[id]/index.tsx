@@ -9,6 +9,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CoeBadge } from '@/components/glass/CoeBadge';
 import { GlassThumb } from '@/components/glass/GlassThumb';
 import { PhotoSlot } from '@/components/glass/PhotoSlot';
+import { BenchTimer } from '@/components/projects/BenchTimer';
 import { CoeBanner, StatusPill } from '@/components/projects/ProjectBits';
 import { SupplyThumb } from '@/components/supplies/SupplyBits';
 import { Button, Chip, ChipRow, Column } from '@/components/ui';
@@ -34,6 +35,7 @@ import { kindLabel, projectCoeWarning, statusSteps } from '@/domain/projects';
 import { supplyTitle } from '@/domain/supplies';
 import { addPhoto, deletePhoto, photoProblem, type PhotoSource } from '@/lib/photos';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
+import { photoUri } from '@/lib/photoUri';
 
 type Loaded = { project: Project; glass: ProjectGlassLine[]; supplies: ProjectSupplyLine[]; photos: Photo[] };
 
@@ -141,6 +143,8 @@ export default function ProjectScreen() {
             </ChipRow>
           </Section>
 
+          <BenchTimer project={project} onChange={load} />
+
           <CoeBanner warning={warning} />
 
           <Section title="Glass used" action={{ label: '+ Use glass', onPress: () => router.push({ pathname: '/projects/[id]/add-glass', params: { id: project.id } }) }}>
@@ -161,7 +165,11 @@ export default function ProjectScreen() {
                       <Text style={[styles.lineAmount, { color: c.text }]}>{describeUse(g)}</Text>
                     </View>
                   </View>
-                  <SmallButton label="Put back" a11y={`Put ${g.color_name} back in inventory`} onPress={after(() => returnGlass(db, g.id))} />
+                  {g.partial ? (
+                    <SmallButton label="Remove" a11y={`Remove ${g.color_name} from this project. The sheet was cut, so it doesn't go back.`} onPress={after(() => returnGlass(db, g.id))} />
+                  ) : (
+                    <SmallButton label="Put back" a11y={`Put ${g.color_name} back in inventory`} onPress={after(() => returnGlass(db, g.id))} />
+                  )}
                 </View>
               ))
             )}
@@ -201,7 +209,7 @@ export default function ProjectScreen() {
               <View style={styles.grid}>
                 {photos.map((p) => (
                   <Pressable key={p.id} onPress={() => setViewing(p)} accessibilityRole="imagebutton" accessibilityLabel={`Progress photo from ${fmtDate(p.created_at)}`} style={styles.gridItem}>
-                    <Image source={{ uri: p.uri }} style={[styles.gridImage, { borderColor: c.border }]} contentFit="cover" />
+                    <Image source={{ uri: photoUri(p.uri) }} style={[styles.gridImage, { borderColor: c.border }]} contentFit="cover" />
                     <Text style={[styles.small, { color: c.muted }]}>{fmtDate(p.created_at)}</Text>
                   </Pressable>
                 ))}
@@ -239,7 +247,7 @@ export default function ProjectScreen() {
         <SafeAreaView style={[styles.viewer, { backgroundColor: '#000' }]}>
           {viewing && (
             <>
-              <Image source={{ uri: viewing.uri }} style={styles.viewerImage} contentFit="contain" />
+              <Image source={{ uri: photoUri(viewing.uri) }} style={styles.viewerImage} contentFit="contain" />
               <Text style={styles.viewerDate}>{fmtDate(viewing.created_at)}</Text>
               <View style={styles.viewerButtons}>
                 <Button label="Close" variant="secondary" onPress={() => setViewing(null)} style={styles.flexButton} />

@@ -4,11 +4,13 @@ import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, Vi
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BarcodeScanner } from '@/components/BarcodeScanner';
+import { CatalogSearch } from '@/components/glass/CatalogSearch';
 import { PhotoSlot } from '@/components/glass/PhotoSlot';
 import { SizesEditor } from '@/components/glass/SizeRows';
 import { Button, Chip, ChipRow, Column, Field, Label } from '@/components/ui';
 import { glassWithBarcode, listManufacturers } from '@/db/glassRepo';
 import type { Coe, GlassKind } from '@/db/types';
+import { findByCode, type CatalogGlass } from '@/domain/catalog';
 import {
   COLOR_FAMILIES,
   GLASS_KINDS,
@@ -72,6 +74,20 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
     setErrors((prev) => ({ ...prev, coe: undefined }));
   };
 
+  /** Fills in what the catalog knows. Stock, photos and notes are hers to add. */
+  const fillFrom = (g: CatalogGlass) => {
+    setInput((prev) => ({
+      ...prev,
+      color_name: g.name,
+      manufacturer: g.maker,
+      product_code: g.code,
+      coe: g.coe,
+      glass_type: prev.kind === 'sheet' || prev.kind === 'scrap' ? g.glassType : prev.glass_type,
+      color_family: g.colorFamily,
+    }));
+    setErrors((prev) => ({ ...prev, color_name: undefined, coe: undefined }));
+  };
+
   const makerSuggestions = useMemo(() => {
     const all = [...new Set([...usedMakers, ...MANUFACTURERS])];
     const typed = input.manufacturer.trim().toLowerCase();
@@ -113,6 +129,8 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
         keyboardShouldPersistTaps="handled"
       >
         <Column style={styles.form}>
+          {!itemId && <CatalogSearch onPick={fillFrom} />}
+
           <View>
             <Label>What is it?</Label>
             <ChipRow>
@@ -257,6 +275,16 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
           )}
 
           <Field
+            label="Remind me when I'm down to"
+            hint={`Optional. At this many ${UNIT_LABELS[input.kind === 'sheet' ? 'sheet' : input.unit].many} or fewer, it goes on the shopping list.`}
+            placeholder="e.g. 1"
+            value={input.min_quantity}
+            onChangeText={(t) => set('min_quantity', t)}
+            error={errors.min_quantity}
+            keyboardType="decimal-pad"
+          />
+
+          <Field
             label={`Price paid per ${unitWord}`}
             hint="Optional. Used later to work out what a piece costs to make."
             placeholder="0.00"
@@ -310,6 +338,9 @@ export function GlassForm({ initial, itemId, submitLabel, onSubmit, onCancel }: 
                   onCode={(code) => {
                     set('barcode', code);
                     setScanning(false);
+                    // Some labels print the maker's code as the barcode.
+                    const match = findByCode(code);
+                    if (match.length === 1 && input.color_name.trim() === '') fillFrom(match[0]);
                   }}
                   onCancel={() => setScanning(false)}
                 />

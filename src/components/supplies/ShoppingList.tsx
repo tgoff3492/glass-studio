@@ -4,11 +4,14 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { GlassThumb } from '@/components/glass/GlassThumb';
 import { SupplyThumb } from '@/components/supplies/SupplyBits';
 import { Button, Column } from '@/components/ui';
+import { listLowGlass } from '@/db/glassRepo';
 import { addShoppingItem, clearDoneShopping, deleteShoppingItem, listShopping, setShoppingDone } from '@/db/shoppingRepo';
 import { listSupplies } from '@/db/suppliesRepo';
-import type { ShoppingItem, Supply } from '@/db/types';
+import type { GlassItem, ShoppingItem, Supply } from '@/db/types';
+import { formatQuantity } from '@/domain/glass';
 import { shoppingChanged } from '@/lib/shoppingCount';
 import { lowStockNote, supplyTitle } from '@/domain/supplies';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
@@ -18,12 +21,14 @@ export function ShoppingList({ onChanged }: { onChanged?: () => void }) {
   const db = useSQLiteContext();
   const c = useColors();
   const [low, setLow] = useState<Supply[]>([]);
+  const [lowGlass, setLowGlass] = useState<GlassItem[]>([]);
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [draft, setDraft] = useState('');
 
   const load = useCallback(async () => {
-    const [l, i] = await Promise.all([listSupplies(db, { lowOnly: true }), listShopping(db)]);
+    const [l, g, i] = await Promise.all([listSupplies(db, { lowOnly: true }), listLowGlass(db), listShopping(db)]);
     setLow(l);
+    setLowGlass(g);
     setItems(i);
   }, [db]);
 
@@ -48,7 +53,7 @@ export function ShoppingList({ onChanged }: { onChanged?: () => void }) {
 
   const toBuy = items.filter((i) => !i.done);
   const done = items.filter((i) => i.done);
-  const empty = low.length === 0 && items.length === 0;
+  const empty = low.length === 0 && lowGlass.length === 0 && items.length === 0;
 
   return (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -74,13 +79,30 @@ export function ShoppingList({ onChanged }: { onChanged?: () => void }) {
           <View style={styles.empty}>
             <Text style={[styles.emptyTitle, { color: c.text }]}>Nothing to buy</Text>
             <Text style={[styles.body, { color: c.muted }]}>
-              Supplies show up here on their own when they run low. You can also add glass from its page, or type anything above.
+              Supplies and glass with a “remind me” amount show up here on their own when they run low. You can also add glass from its page, or type anything above.
             </Text>
           </View>
         )}
 
-        {low.length > 0 && (
+        {(low.length > 0 || lowGlass.length > 0) && (
           <Section title="Running low" hint="These come off the list when you restock them.">
+            {lowGlass.map((g) => (
+              <Pressable
+                key={g.id}
+                onPress={() => router.push({ pathname: '/glass/[id]', params: { id: g.id } })}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              >
+                <GlassThumb uri={g.photo_uri} family={g.color_family} size={44} />
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowTitle, { color: c.text }]}>{[g.manufacturer, g.color_name].filter(Boolean).join(' ')}</Text>
+                  <Text style={[styles.rowSub, { color: g.quantity <= 0 ? c.danger : c.coe96 }]}>
+                    {g.quantity <= 0 ? 'All gone' : `${formatQuantity(g.quantity, g.unit)} left`}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={22} color={c.muted} />
+              </Pressable>
+            ))}
             {low.map((s) => (
               <Pressable
                 key={s.id}

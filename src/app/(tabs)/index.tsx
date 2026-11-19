@@ -1,12 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GlassInventory } from '@/components/inventory/GlassInventory';
 import { SupplyInventory } from '@/components/inventory/SupplyInventory';
 import { Button, Column } from '@/components/ui';
+import { SETTING, countEverything, getSetting } from '@/db/settingsRepo';
+import { backupIsDue, describeLastBackup } from '@/domain/backupFormat';
+import { backupsSupported } from '@/lib/backup';
 import { space, type, useColors } from '@/theme/theme';
 
 type Side = 'glass' | 'supplies';
@@ -15,6 +19,7 @@ type Side = 'glass' | 'supplies';
 export default function InventoryScreen() {
   const c = useColors();
   const [side, setSide] = useState<Side>('glass');
+  const backupNudge = useBackupNudge();
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
@@ -43,6 +48,18 @@ export default function InventoryScreen() {
             />
           </View>
         </View>
+        {backupNudge && (
+          <Pressable
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.nudge, { backgroundColor: c.surface, borderColor: c.coe96, opacity: pressed ? 0.8 : 1 }]}
+          >
+            <Ionicons name="cloud-upload-outline" size={24} color={c.coe96} />
+            <Text style={[styles.nudgeText, { color: c.text }]}>
+              {backupNudge === 'never' ? 'You haven’t saved a backup yet.' : `Last backup: ${backupNudge}.`} Tap to save one.
+            </Text>
+          </Pressable>
+        )}
         <View style={[styles.segment, { backgroundColor: c.accentSoft }]} accessibilityRole="tablist">
           <Segment label="Glass" selected={side === 'glass'} onPress={() => setSide('glass')} />
           <Segment label="Supplies" selected={side === 'supplies'} onPress={() => setSide('supplies')} />
@@ -51,6 +68,24 @@ export default function InventoryScreen() {
       {side === 'glass' ? <GlassInventory /> : <SupplyInventory />}
     </SafeAreaView>
   );
+}
+
+/** When a backup is overdue, what to say about the last one; otherwise null. */
+function useBackupNudge(): string | null {
+  const db = useSQLiteContext();
+  const [nudge, setNudge] = useState<string | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      if (!backupsSupported) return;
+      Promise.all([getSetting(db, SETTING.lastBackupAt), countEverything(db)])
+        .then(([last, n]) => {
+          const now = new Date();
+          setNudge(backupIsDue(last, n.glass + n.supplies + n.projects, now) ? describeLastBackup(last, now) : null);
+        })
+        .catch(() => {});
+    }, [db]),
+  );
+  return nudge;
 }
 
 function Segment({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
@@ -72,6 +107,8 @@ const styles = StyleSheet.create({
   top: { paddingHorizontal: space.md, paddingTop: space.md, gap: space.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   title: { fontSize: type.title, fontWeight: '700' },
+  nudge: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderWidth: 1, borderRadius: 12, padding: space.md },
+  nudgeText: { flex: 1, fontSize: type.label, fontWeight: '600' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   addButton: { minHeight: 48, paddingHorizontal: space.md },
   scanButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.md, borderRadius: 12, borderWidth: 1 },

@@ -1,7 +1,8 @@
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 
+import { ErrorScreen } from '@/components/ErrorScreen';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db/migrate';
 import { type, useColors } from '@/theme/theme';
 
@@ -32,7 +33,14 @@ export default function RootLayout() {
         <Stack.Screen name="projects/[id]/edit" options={{ title: 'Edit project', presentation: 'modal' }} />
         <Stack.Screen name="projects/[id]/add-glass" options={{ title: 'Use glass', presentation: 'modal' }} />
         <Stack.Screen name="projects/[id]/add-supply" options={{ title: 'Use a supply', presentation: 'modal' }} />
+        <Stack.Screen name="feedback" options={{ title: 'Send Taylor a note', presentation: 'modal' }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack>
     </SQLiteProvider>
   );
+}
+
+/** Any screen that crashes shows this instead of a blank app. */
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <ErrorScreen {...props} />;
 }

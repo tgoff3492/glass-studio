@@ -125,3 +125,23 @@ test('migration 6 rebuilds glass without losing sizes or project links, and move
   assert.throws(() => raw.exec("DELETE FROM glass_items WHERE id = 'g1'"), 'glass used by a project still cannot be deleted');
   assert.equal(one<{ foreign_keys: number }>('PRAGMA foreign_keys').foreign_keys, 1);
 });
+
+test('version 7 turns full photo addresses into names, and leaves web photos alone', async () => {
+  const { raw, db } = openTestDb();
+  await runMigrations(db, migrations.filter((m) => m.version <= 6));
+  const old = 'file:///var/mobile/Containers/Data/Application/1F2E-AB/Documents/photos/abc.jpg';
+  raw
+    .prepare('INSERT INTO glass_items (id, kind, color_name, quantity, unit, photo_uri, fired_photo_uri, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run('g', 'sheet', 'Red', 1, 'sheet', old, 'data:image/jpeg;base64,AAAA', now, now);
+  raw.prepare("INSERT INTO projects (id, name, kind, created_at, updated_at) VALUES ('p', 'Sun', 'fused', ?, ?)").run(now, now);
+  raw.prepare("INSERT INTO photos (id, owner_type, owner_id, uri, created_at) VALUES ('ph', 'project', 'p', ?, ?)").run(old, now);
+  raw.prepare("INSERT INTO firings (id, project_id, fired_on, created_at, updated_at) VALUES ('f', 'p', ?, ?, ?)").run(now, now, now);
+
+  assert.equal(await runMigrations(db), LATEST_VERSION);
+  const g = raw.prepare("SELECT photo_uri, fired_photo_uri FROM glass_items WHERE id = 'g'").get() as Record<string, string>;
+  assert.equal(g.photo_uri, 'photos/abc.jpg');
+  assert.equal(g.fired_photo_uri, 'data:image/jpeg;base64,AAAA');
+  assert.equal((raw.prepare("SELECT uri FROM photos WHERE id = 'ph'").get() as { uri: string }).uri, 'photos/abc.jpg');
+  // Version 8 moved the firing's project into the link table.
+  assert.deepEqual(raw.prepare('SELECT firing_id, project_id FROM firing_projects').all().map((r) => ({ ...r })), [{ firing_id: 'f', project_id: 'p' }]);
+});

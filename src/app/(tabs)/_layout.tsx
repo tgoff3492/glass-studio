@@ -18,7 +18,6 @@ const tabs: { name: string; title: string; icon: IconName }[] = [
   { name: 'index', title: 'Inventory', icon: 'layers-outline' },
   { name: 'shopping', title: 'Shopping', icon: 'cart-outline' },
   { name: 'projects', title: 'Projects', icon: 'images-outline' },
-  { name: 'kiln', title: 'Kiln', icon: 'flame-outline' },
   { name: 'settings', title: 'Settings', icon: 'settings-outline' },
 ];
 
@@ -58,6 +57,8 @@ export default function TabLayout() {
           }}
         />
       ))}
+      {/* Kathryn's kiln has its own app, so the kiln log waits. The screen stays for a future link to it. */}
+      <Tabs.Screen name="kiln" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -5,8 +5,9 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Column } from '@/components/ui';
-import { SETTING, countEverything, getSetting } from '@/db/settingsRepo';
+import { Button, Column, Field } from '@/components/ui';
+import { SETTING, countEverything, getPricing, getSetting, setSetting } from '@/db/settingsRepo';
+import { parseMoney } from '@/domain/costing';
 import { describeLastBackup } from '@/domain/backupFormat';
 import { backupsSupported, restoreBackup, shareBackup } from '@/lib/backup';
 import { space, type, useColors } from '@/theme/theme';
@@ -109,7 +110,9 @@ export default function SettingsScreen() {
             </Text>
           </Section>
 
-          <Section title="Help">
+          <PricingSection />
+
+        <Section title="Help">
             <Button label="Send Taylor a note" variant="secondary" onPress={() => router.push('/feedback')} />
             <Button label="Play the welcome again" variant="secondary" onPress={() => router.push('/welcome')} />
           </Section>
@@ -132,6 +135,74 @@ export default function SettingsScreen() {
         </Modal>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Her hourly rate and markup, used for "What it cost" on each project. */
+function PricingSection() {
+  const db = useSQLiteContext();
+  const c = useColors();
+  const [rate, setRate] = useState('');
+  const [markup, setMarkup] = useState('');
+  const [saved, setSaved] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ rate?: string; markup?: string }>({});
+
+  useFocusEffect(
+    useCallback(() => {
+      getPricing(db).then((p) => {
+        setRate(p.hourlyCents === null ? '' : String(p.hourlyCents / 100));
+        setMarkup(p.markupPercent === null ? '' : String(p.markupPercent));
+      });
+    }, [db]),
+  );
+
+  const save = async () => {
+    const r = parseMoney(rate);
+    const m = markup.trim() === '' ? null : Number(markup.trim().replace(/%$/, ''));
+    const next: typeof errors = {};
+    if (r === undefined) next.rate = 'Enter an amount like 15 or 22.50, or leave it blank.';
+    if (m !== null && !(Number.isFinite(m) && m >= 0)) next.markup = 'Enter a percent like 20, or leave it blank.';
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
+    await setSetting(db, SETTING.hourlyRateCents, r === null || r === undefined ? '' : String(r));
+    await setSetting(db, SETTING.markupPercent, m === null ? '' : String(m));
+    setSaved('Saved. Projects use these now.');
+  };
+
+  return (
+    <Section title="Pricing">
+      <Text style={[styles.body, { color: c.text }]}>Each project shows what it cost to make. These two numbers turn that into a price.</Text>
+      <Field
+        label="Your time, per hour"
+        hint="Optional. Bench time on a project is counted at this rate."
+        placeholder="e.g. 15"
+        value={rate}
+        onChangeText={(t) => {
+          setRate(t);
+          setSaved(null);
+        }}
+        error={errors.rate}
+        keyboardType="decimal-pad"
+      />
+      <Field
+        label="Add on top (%)"
+        hint="Optional. For profit, the shop's cut, or show fees. 20 adds a fifth."
+        placeholder="e.g. 20"
+        value={markup}
+        onChangeText={(t) => {
+          setMarkup(t);
+          setSaved(null);
+        }}
+        error={errors.markup}
+        keyboardType="decimal-pad"
+      />
+      <Button label="Save pricing" variant="secondary" onPress={save} />
+      {saved && (
+        <Text style={[styles.small, { color: c.text }]} accessibilityLiveRegion="polite">
+          {saved}
+        </Text>
+      )}
+    </Section>
   );
 }
 

@@ -24,13 +24,15 @@ Phase 2 (supplies and shopping) is built: stained-glass supplies (foil, solder, 
 
 Data safety and delivery are built: photos are saved by name rather than by full file address (so they survive an iOS restore), a **Settings** tab saves everything (database and photos) into one backup file to keep in iCloud Drive and restores from one, the app quietly copies the database before every update and once a week, a crash shows a friendly screen instead of a blank app, and "Send Taylor a note" shares a message with the app version and recent problems attached. A first-launch welcome animation for Kathryn and a matching rose-window icon are in place. See [docs/SHIPPING.md](docs/SHIPPING.md) for getting it onto her iPhone and iPad through TestFlight.
 
+Everyday polish is built: an **Undo** bar after quick changes (the +/− buttons, Put back, removing from the shopping list), where a burst of taps undoes together; **Make this again** on a project, which shows how many more she has materials for and starts a numbered copy that takes the same glass and supplies; **What it cost** on each project, from the prices she entered plus bench time at her hourly rate, with a starting price at her own markup (set both in Settings); and an **iPad layout** with the list and the open item side by side on Inventory and Projects. The Kiln tab is hidden for now because her kiln has its own app; the kiln tables stay for a possible link later.
+
 Faster entry is built: a built-in catalog of Bullseye (COE 90) and Oceanside (COE 96) glass fills in the form from a code or color ("1101", "SF523.2W", "cobalt") and from scanned labels it recognizes; "Add another like this" on a glass page; a "remind me when I'm down to" amount for glass, which puts favorite colors on the shopping list; cutting part of a sheet for a project, with the leftover going back as a smaller size or into a scrap bin that keeps the glass's COE; and a bench timer on each project.
 
 Phase 3 (projects) is built: stained or fused projects with status steps that fit each craft, pattern and progress photos, glass and supplies pulled from inventory (by size for sized sheets) with put-back, a COE warning for fused pieces before and after mixing 90 and 96, and delete that either returns materials or leaves them used. Glass pages list the projects that use them. The Kiln tab still shows what's coming.
 
 ## Layout
 
-Five tabs: **Inventory** (a Glass / Supplies switch), **Shopping** (with a badge counting what's to buy), **Projects**, **Kiln** and **Settings** (backup, restore, send a note). Photos accept JPEG, PNG and HEIC; in the web preview, HEIC is converted to JPEG and "Take photo" opens the camera on phones and tablets.
+Four tabs: **Inventory** (a Glass / Supplies switch), **Shopping** (with a badge counting what's to buy), **Projects** and **Settings** (backup, restore, pricing, send a note). On an iPad, Inventory and Projects show the list and the open item side by side (`src/components/split.tsx`). The Kiln screen is still in the code, hidden from the tab bar. Photos accept JPEG, PNG and HEIC; in the web preview, HEIC is converted to JPEG and "Take photo" opens the camera on phones and tablets.
 
 ## Web preview
 

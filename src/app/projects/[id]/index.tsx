@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,6 +10,11 @@ import { CoeBadge } from '@/components/glass/CoeBadge';
 import { GlassThumb } from '@/components/glass/GlassThumb';
 import { PhotoSlot } from '@/components/glass/PhotoSlot';
 import { BenchTimer } from '@/components/projects/BenchTimer';
+import { ScreenOptions, useDetailId, useLeave } from '@/components/split';
+import { CostCard } from '@/components/projects/CostCard';
+import { getPricing } from '@/db/settingsRepo';
+import { useUndo } from '@/components/Undo';
+import { projectGlassLineScopes, projectSupplyLineScopes } from '@/db/undoRepo';
 import { CoeBanner, StatusPill } from '@/components/projects/ProjectBits';
 import { SupplyThumb } from '@/components/supplies/SupplyBits';
 import { Button, Chip, ChipRow, Column } from '@/components/ui';
@@ -37,13 +42,21 @@ import { addPhoto, deletePhoto, photoProblem, type PhotoSource } from '@/lib/pho
 import { space, tapTarget, type, useColors } from '@/theme/theme';
 import { photoUri } from '@/lib/photoUri';
 
-type Loaded = { project: Project; glass: ProjectGlassLine[]; supplies: ProjectSupplyLine[]; photos: Photo[] };
+type Loaded = {
+  project: Project;
+  glass: ProjectGlassLine[];
+  supplies: ProjectSupplyLine[];
+  photos: Photo[];
+  pricing: { hourlyCents: number | null; markupPercent: number | null };
+};
 
 export default function ProjectScreen() {
   const db = useSQLiteContext();
+  const undo = useUndo();
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useDetailId();
+  const leave = useLeave();
   const [data, setData] = useState<Loaded | null | undefined>(undefined);
   const [viewing, setViewing] = useState<Photo | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -55,8 +68,13 @@ export default function ProjectScreen() {
       setData(null);
       return;
     }
-    const [glass, supplies, photos] = await Promise.all([listProjectGlass(db, id), listProjectSupplies(db, id), listProjectPhotos(db, id)]);
-    setData({ project, glass, supplies, photos });
+    const [glass, supplies, photos, pricing] = await Promise.all([
+      listProjectGlass(db, id),
+      listProjectSupplies(db, id),
+      listProjectPhotos(db, id),
+      getPricing(db),
+    ]);
+    setData({ project, glass, supplies, photos, pricing });
   }, [db, id]);
 
   useFocusEffect(
@@ -75,14 +93,14 @@ export default function ProjectScreen() {
   if (data === null) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: 'Not found' }} />
+        <ScreenOptions options={{ title: 'Not found' }} />
         <Text style={[styles.body, { color: c.muted }]}>{"This project isn't here anymore."}</Text>
-        <Button label="Back to projects" variant="secondary" onPress={() => router.back()} />
+        <Button label="Back to projects" variant="secondary" onPress={() => leave()} />
       </View>
     );
   }
 
-  const { project, glass, supplies, photos } = data;
+  const { project, glass, supplies, photos, pricing } = data;
   const warning = projectCoeWarning(project.kind, glass);
   const after = (fn: () => Promise<unknown>) => async () => {
     await fn();
@@ -101,14 +119,14 @@ export default function ProjectScreen() {
   const remove = async (returnMaterials: boolean) => {
     const files = await deleteProject(db, project.id, returnMaterials);
     files.forEach(deletePhoto);
-    router.back();
+    leave();
   };
 
   const edit = () => router.push({ pathname: '/projects/[id]/edit', params: { id: project.id } });
 
   return (
     <>
-      <Stack.Screen
+      <ScreenOptions
         options={{
           title: project.name,
           headerRight: () => (
@@ -166,9 +184,39 @@ export default function ProjectScreen() {
                     </View>
                   </View>
                   {g.partial ? (
-                    <SmallButton label="Remove" a11y={`Remove ${g.color_name} from this project. The sheet was cut, so it doesn't go back.`} onPress={after(() => returnGlass(db, g.id))} />
+                    <SmallButton
+                      label="Remove"
+                      a11y={`Remove ${g.color_name} from this project. The sheet was cut, so it doesn't go back.`}
+                      onPress={() =>
+                        undo.run({
+                          key: `pg:${g.id}`,
+                          scopes: projectGlassLineScopes(g),
+                          after: load,
+                          change: async () => {
+                            await returnGlass(db, g.id);
+                            await load();
+                            return `Removed ${g.color_name} from ${project.name}`;
+                          },
+                        })
+                      }
+                    />
                   ) : (
-                    <SmallButton label="Put back" a11y={`Put ${g.color_name} back in inventory`} onPress={after(() => returnGlass(db, g.id))} />
+                    <SmallButton
+                      label="Put back"
+                      a11y={`Put ${g.color_name} back in inventory`}
+                      onPress={() =>
+                        undo.run({
+                          key: `pg:${g.id}`,
+                          scopes: projectGlassLineScopes(g),
+                          after: load,
+                          change: async () => {
+                            await returnGlass(db, g.id);
+                            await load();
+                            return `Put ${describeUse(g)} ${g.color_name} back`;
+                          },
+                        })
+                      }
+                    />
                   )}
                 </View>
               ))
@@ -188,7 +236,22 @@ export default function ProjectScreen() {
                     </Text>
                     <Text style={[styles.lineAmount, { color: c.text }]}>{formatQuantity(s.quantity, s.unit)}</Text>
                   </View>
-                  <SmallButton label="Put back" a11y={`Put ${s.name} back in inventory`} onPress={after(() => returnSupply(db, s.id))} />
+                  <SmallButton
+                    label="Put back"
+                    a11y={`Put ${s.name} back in inventory`}
+                    onPress={() =>
+                      undo.run({
+                        key: `ps:${s.id}`,
+                        scopes: projectSupplyLineScopes(s),
+                        after: load,
+                        change: async () => {
+                          await returnSupply(db, s.id);
+                          await load();
+                          return `Put ${s.name} back`;
+                        },
+                      })
+                    }
+                  />
                 </View>
               ))
             )}
@@ -221,6 +284,17 @@ export default function ProjectScreen() {
               <Button label="Choose photo" variant="secondary" onPress={() => addProgress('library')} style={styles.flexButton} />
             </View>
           </Section>
+
+          <CostCard project={project} glass={glass} supplies={supplies} pricing={pricing} />
+
+          {(glass.length > 0 || supplies.length > 0) && (
+            <Button
+              label="Make this again"
+              variant="secondary"
+              accessibilityHint="Shows how many more you have materials for, and starts a copy"
+              onPress={() => router.push({ pathname: '/projects/[id]/again', params: { id: project.id } })}
+            />
+          )}
 
           {project.notes && (
             <Section title="Notes">

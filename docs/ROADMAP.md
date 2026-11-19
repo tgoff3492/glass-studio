@@ -59,10 +59,14 @@ Arrows mean "needs data from."
 - "Add another like this", "remind me when I'm down to" for glass
 - Part of a sheet: leftovers back as a smaller size or into a COE-labeled scrap bin
 - Bench timer on projects
-- Still to do: undo after a quick change, "make this again" for repeat pieces, iPad two-pane layout
+- Undo after a quick change, "Make this again" for repeat pieces, iPad side-by-side layout — built
 
-## Phase 4 · Kiln log
+## Phase 4 · Kiln log — on hold
+Kathryn's kiln came with its own app, so the in-app kiln log is on hold and the Kiln tab is hidden.
 - Data model ready: a firing links to any number of projects (one kiln load, several pieces)
+- Possible later: link to her kiln's app. Skutt KilnLink and Bartlett KilnAid only monitor
+  firings and publish no developer API; some Skutt controllers can export a firing log file,
+  which could be imported. Depends on which controller she has.
 - Schedule library: full fuse, tack fuse, contour, slump, drape, fire polish
 - Segments: rate (°F/hr), target temperature, hold time
 - Firing log linked to a project, with before/after photos and notes
@@ -70,8 +74,8 @@ Arrows mean "needs data from."
 - Copy a past firing as a starting point
 
 ## Phase 5 · Costing & sales
-- Cost per piece from glass, supplies and firings
-- Pricing helper with her own markup
+- Cost per piece from glass, supplies and bench time — built
+- Pricing helper with her own markup — built
 - Finished pieces: at home, on consignment, at a show, sold
 - Sales log and monthly totals
 

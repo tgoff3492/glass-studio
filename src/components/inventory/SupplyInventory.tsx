@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { StockBadge, SupplyThumb } from '@/components/supplies/SupplyBits';
@@ -11,6 +11,8 @@ import type { Supply } from '@/db/types';
 import { formatQuantity } from '@/domain/glass';
 import { SUPPLY_GROUPS, categoryInfo, type SupplyGroup } from '@/domain/supplies';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
+import { useIsOpen, useOpenItem } from '@/components/split';
+import { onDataChanged } from '@/lib/dataChanged';
 
 /** The Supplies side of the Inventory tab: search, filters and the list. */
 export function SupplyInventory() {
@@ -37,6 +39,7 @@ export function SupplyInventory() {
       load();
     }, [load]),
   );
+  useEffect(() => onDataChanged(() => void load()), [load]);
 
   const filtering = Boolean(search.trim() || group || lowOnly);
   const clearFilters = () => {
@@ -116,13 +119,15 @@ export function SupplyInventory() {
 
 function SupplyRow({ item }: { item: Supply }) {
   const c = useColors();
+  const open = useOpenItem();
+  const isOpen = useIsOpen('supply', item.id);
   const sub = [item.size, item.brand].filter(Boolean).join(' · ') || categoryInfo(item.category).label;
   return (
     <Column>
       <Pressable
-        onPress={() => router.push({ pathname: '/supplies/[id]', params: { id: item.id } })}
+        onPress={() => open('supply', item.id)}
         accessibilityRole="button"
-        style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+        style={({ pressed }) => [styles.row, isOpen && { backgroundColor: c.accentSoft, borderRadius: 12 }, { opacity: pressed ? 0.7 : 1 }]}
       >
         <SupplyThumb uri={item.photo_uri} category={item.category} />
         <View style={styles.rowText}>

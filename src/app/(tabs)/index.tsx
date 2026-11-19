@@ -12,6 +12,9 @@ import { SETTING, countEverything, getSetting } from '@/db/settingsRepo';
 import { backupIsDue, describeLastBackup } from '@/domain/backupFormat';
 import { backupsSupported } from '@/lib/backup';
 import { space, type, useColors } from '@/theme/theme';
+import { SplitView } from '@/components/split';
+import GlassDetailScreen from '@/app/glass/[id]/index';
+import SupplyDetailScreen from '@/app/supplies/[id]/index';
 
 type Side = 'glass' | 'supplies';
 
@@ -23,49 +26,57 @@ export default function InventoryScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
-      <Column style={styles.top}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
-            Inventory
-          </Text>
-          <View style={styles.actions}>
-            {side === 'glass' && (
-              <Pressable
-                onPress={() => router.push('/glass/scan')}
-                accessibilityRole="button"
-                accessibilityLabel="Scan a barcode"
-                style={({ pressed }) => [styles.scanButton, { borderColor: c.border, backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}
-              >
-                <Ionicons name="barcode-outline" size={24} color={c.accent} />
-                <Text style={[styles.scanText, { color: c.accent }]}>Scan</Text>
-              </Pressable>
-            )}
-            <Button
-              label="+ Add"
-              onPress={() => router.push(side === 'glass' ? '/glass/new' : '/supplies/new')}
-              style={styles.addButton}
-              accessibilityHint={side === 'glass' ? 'Add glass' : 'Add a supply'}
-            />
+      <SplitView
+        emptyText="Choose glass or a supply to see it here."
+        renderDetail={(s) => (s.kind === 'glass' ? <GlassDetailScreen /> : <SupplyDetailScreen />)}
+        list={
+          <View style={styles.flex}>
+            <Column style={styles.top}>
+              <View style={styles.titleRow}>
+                <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
+                  Inventory
+                </Text>
+                <View style={styles.actions}>
+                  {side === 'glass' && (
+                    <Pressable
+                      onPress={() => router.push('/glass/scan')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Scan a barcode"
+                      style={({ pressed }) => [styles.scanButton, { borderColor: c.border, backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}
+                    >
+                      <Ionicons name="barcode-outline" size={24} color={c.accent} />
+                      <Text style={[styles.scanText, { color: c.accent }]}>Scan</Text>
+                    </Pressable>
+                  )}
+                  <Button
+                    label="+ Add"
+                    onPress={() => router.push(side === 'glass' ? '/glass/new' : '/supplies/new')}
+                    style={styles.addButton}
+                    accessibilityHint={side === 'glass' ? 'Add glass' : 'Add a supply'}
+                  />
+                </View>
+              </View>
+              {backupNudge && (
+                <Pressable
+                  onPress={() => router.push('/settings')}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.nudge, { backgroundColor: c.surface, borderColor: c.coe96, opacity: pressed ? 0.8 : 1 }]}
+                >
+                  <Ionicons name="cloud-upload-outline" size={24} color={c.coe96} />
+                  <Text style={[styles.nudgeText, { color: c.text }]}>
+                    {backupNudge === 'never' ? 'You haven’t saved a backup yet.' : `Last backup: ${backupNudge}.`} Tap to save one.
+                  </Text>
+                </Pressable>
+              )}
+              <View style={[styles.segment, { backgroundColor: c.accentSoft }]} accessibilityRole="tablist">
+                <Segment label="Glass" selected={side === 'glass'} onPress={() => setSide('glass')} />
+                <Segment label="Supplies" selected={side === 'supplies'} onPress={() => setSide('supplies')} />
+              </View>
+            </Column>
+            {side === 'glass' ? <GlassInventory /> : <SupplyInventory />}
           </View>
-        </View>
-        {backupNudge && (
-          <Pressable
-            onPress={() => router.push('/settings')}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.nudge, { backgroundColor: c.surface, borderColor: c.coe96, opacity: pressed ? 0.8 : 1 }]}
-          >
-            <Ionicons name="cloud-upload-outline" size={24} color={c.coe96} />
-            <Text style={[styles.nudgeText, { color: c.text }]}>
-              {backupNudge === 'never' ? 'You haven’t saved a backup yet.' : `Last backup: ${backupNudge}.`} Tap to save one.
-            </Text>
-          </Pressable>
-        )}
-        <View style={[styles.segment, { backgroundColor: c.accentSoft }]} accessibilityRole="tablist">
-          <Segment label="Glass" selected={side === 'glass'} onPress={() => setSide('glass')} />
-          <Segment label="Supplies" selected={side === 'supplies'} onPress={() => setSide('supplies')} />
-        </View>
-      </Column>
-      {side === 'glass' ? <GlassInventory /> : <SupplyInventory />}
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -103,6 +114,7 @@ function Segment({ label, selected, onPress }: { label: string; selected: boolea
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   safe: { flex: 1 },
   top: { paddingHorizontal: space.md, paddingTop: space.md, gap: space.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },

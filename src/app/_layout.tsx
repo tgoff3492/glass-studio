@@ -3,6 +3,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 
 import { ErrorScreen } from '@/components/ErrorScreen';
+import { UndoProvider } from '@/components/Undo';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db/migrate';
 import { type, useColors } from '@/theme/theme';
 
@@ -11,6 +12,7 @@ export default function RootLayout() {
   return (
     <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded}>
       <StatusBar style="auto" />
+      <UndoProvider>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: c.surface },
@@ -33,9 +35,11 @@ export default function RootLayout() {
         <Stack.Screen name="projects/[id]/edit" options={{ title: 'Edit project', presentation: 'modal' }} />
         <Stack.Screen name="projects/[id]/add-glass" options={{ title: 'Use glass', presentation: 'modal' }} />
         <Stack.Screen name="projects/[id]/add-supply" options={{ title: 'Use a supply', presentation: 'modal' }} />
+        <Stack.Screen name="projects/[id]/again" options={{ title: 'Make this again', presentation: 'modal' }} />
         <Stack.Screen name="feedback" options={{ title: 'Send Taylor a note', presentation: 'modal' }} />
         <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack>
+      </UndoProvider>
     </SQLiteProvider>
   );
 }

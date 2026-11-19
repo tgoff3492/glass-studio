@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { CoeBadge } from '@/components/glass/CoeBadge';
@@ -11,6 +11,8 @@ import { listGlass } from '@/db/glassRepo';
 import type { Coe, GlassItem, GlassKind } from '@/db/types';
 import { COLOR_FAMILIES, GLASS_KINDS, formatQuantity, kindLabel } from '@/domain/glass';
 import { space, tapTarget, type, useColors } from '@/theme/theme';
+import { useIsOpen, useOpenItem } from '@/components/split';
+import { onDataChanged } from '@/lib/dataChanged';
 
 const COE_FILTERS: { value: Coe | 'none' | null; label: string }[] = [
   { value: null, label: 'Any COE' },
@@ -47,6 +49,7 @@ export function GlassInventory() {
       load();
     }, [load]),
   );
+  useEffect(() => onDataChanged(() => void load()), [load]);
 
   const clearFilters = () => {
     setSearch('');
@@ -153,15 +156,17 @@ function FilterRow({ children }: { children: React.ReactNode }) {
 
 function GlassRow({ item }: { item: GlassItem }) {
   const c = useColors();
+  const open = useOpenItem();
+  const isOpen = useIsOpen('glass', item.id);
   const maker = [item.manufacturer, item.product_code].filter(Boolean).join(' · ');
   const empty = item.quantity === 0;
   return (
     <Column>
       <Pressable
-        onPress={() => router.push({ pathname: '/glass/[id]', params: { id: item.id } })}
+        onPress={() => open('glass', item.id)}
         accessibilityRole="button"
         accessibilityLabel={`${item.color_name}, ${maker}, ${formatQuantity(item.quantity, item.unit)}`}
-        style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+        style={({ pressed }) => [styles.row, isOpen && { backgroundColor: c.accentSoft, borderRadius: 12 }, { opacity: pressed ? 0.7 : 1 }]}
       >
         <GlassThumb uri={item.photo_uri} family={item.color_family} />
         <View style={styles.rowText}>

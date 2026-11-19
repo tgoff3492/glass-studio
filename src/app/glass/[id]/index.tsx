@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,22 +10,27 @@ import { GlassThumb } from '@/components/glass/GlassThumb';
 import { AddSize, SizeRow, SizeTotals } from '@/components/glass/SizeRows';
 import { QuantityCard } from '@/components/QuantityCard';
 import { ShoppingButton } from '@/components/ShoppingButton';
+import { ScreenOptions, useDetailId, useLeave } from '@/components/split';
 import { Button, Column } from '@/components/ui';
 import { changeGlassSize, deleteGlass, getGlass, listGlassSizes, setGlassQuantity } from '@/db/glassRepo';
 import { projectsUsingGlass } from '@/db/projectsRepo';
+import { glassScopes } from '@/db/undoRepo';
+import { useUndo } from '@/components/Undo';
 import { StatusPill } from '@/components/projects/ProjectBits';
 import type { GlassItem, ProjectKind, ProjectStatus } from '@/db/types';
 import { formatQuantity, UNIT_LABELS, colorFamily, kindLabel, typeLabel } from '@/domain/glass';
-import type { SheetSize } from '@/domain/sizes';
+import { normalizeSize, sizeLabel, type SheetSize } from '@/domain/sizes';
 import { discardPhotos } from '@/lib/photoCleanup';
 import { space, type, useColors } from '@/theme/theme';
 import { photoUri } from '@/lib/photoUri';
 
 export default function GlassDetailScreen() {
   const db = useSQLiteContext();
+  const undo = useUndo();
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useDetailId();
+  const leave = useLeave();
   const [item, setItem] = useState<GlassItem | null | undefined>(undefined);
   const [sizes, setSizes] = useState<SheetSize[]>([]);
   const [usedIn, setUsedIn] = useState<{ id: string; name: string; status: ProjectStatus; kind: ProjectKind }[]>([]);
@@ -53,29 +58,51 @@ export default function GlassDetailScreen() {
   if (item === null) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: 'Not found' }} />
+        <ScreenOptions options={{ title: 'Not found' }} />
         <Text style={[styles.body, { color: c.muted }]}>{"This glass isn't in the inventory anymore."}</Text>
-        <Button label="Back to glass" variant="secondary" onPress={() => router.back()} />
+        <Button label="Back to glass" variant="secondary" onPress={() => leave()} />
       </View>
     );
   }
 
-  const changeSizeCount = async (width: number, height: number, delta: number) => {
-    const next = await changeGlassSize(db, item.id, width, height, delta);
-    setSizes(next);
+  const reload = async () => {
+    setSizes(await listGlassSizes(db, item.id));
     setItem(await getGlass(db, item.id));
   };
 
-  const changeQuantity = async (delta: number) => {
-    const saved = await setGlassQuantity(db, item.id, item.quantity + delta);
-    setItem({ ...item, quantity: saved });
-  };
+  const changeSizeCount = (width: number, height: number, delta: number) =>
+    undo.run({
+      key: `glass:${item.id}`,
+      scopes: glassScopes(item.id),
+      after: reload,
+      change: async () => {
+        const next = await changeGlassSize(db, item.id, width, height, delta);
+        setSizes(next);
+        const fresh = await getGlass(db, item.id);
+        setItem(fresh);
+        const [w, h] = normalizeSize(width, height);
+        const n = next.find((s) => s.width === w && s.height === h)?.count ?? 0;
+        return `${item.color_name}: ${n} × ${sizeLabel(width, height)}`;
+      },
+    });
+
+  const changeQuantity = (delta: number) =>
+    undo.run({
+      key: `glass:${item.id}`,
+      scopes: glassScopes(item.id),
+      after: reload,
+      change: async () => {
+        const saved = await setGlassQuantity(db, item.id, item.quantity + delta);
+        setItem({ ...item, quantity: saved });
+        return `${item.color_name}: ${formatQuantity(saved, item.unit)}`;
+      },
+    });
 
   const remove = async () => {
     const result = await deleteGlass(db, item.id);
     if (result.deleted) {
       discardPhotos(item);
-      router.back();
+      leave();
     } else {
       setConfirmDelete(false);
       setDeleteProblem(
@@ -98,7 +125,7 @@ export default function GlassDetailScreen() {
 
   return (
     <>
-      <Stack.Screen
+      <ScreenOptions
         options={{
           title: item.color_name,
           headerRight: () => (

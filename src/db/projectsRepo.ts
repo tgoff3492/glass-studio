@@ -117,6 +117,7 @@ export async function setPatternPhoto(db: QueryDb, id: string, uri: string | nul
 // ---------- glass used ----------
 
 export type ProjectGlassLine = ProjectGlass & {
+  cost_per_unit_cents: number | null;
   color_name: string;
   manufacturer: string | null;
   coe: Coe | null;
@@ -127,7 +128,7 @@ export type ProjectGlassLine = ProjectGlass & {
 
 export function listProjectGlass(db: QueryDb, projectId: string): Promise<ProjectGlassLine[]> {
   return db.getAllAsync<ProjectGlassLine>(
-    `SELECT pg.*, g.color_name, g.manufacturer, g.coe, g.photo_uri, g.color_family, g.kind
+    `SELECT pg.*, g.color_name, g.manufacturer, g.coe, g.photo_uri, g.color_family, g.kind, g.cost_per_unit_cents
      FROM project_glass pg JOIN glass_items g ON g.id = pg.glass_item_id
      WHERE pg.project_id = ? ORDER BY g.color_name COLLATE NOCASE, pg.width_in DESC`,
     [projectId],
@@ -258,6 +259,7 @@ export async function returnGlass(db: QueryDb, lineId: string): Promise<void> {
 // ---------- supplies used ----------
 
 export type ProjectSupplyLine = ProjectSupply & {
+  cost_per_unit_cents: number | null;
   name: string;
   size: string | null;
   category: SupplyCategory;
@@ -266,7 +268,7 @@ export type ProjectSupplyLine = ProjectSupply & {
 
 export function listProjectSupplies(db: QueryDb, projectId: string): Promise<ProjectSupplyLine[]> {
   return db.getAllAsync<ProjectSupplyLine>(
-    `SELECT ps.*, s.name, s.size, s.category, s.photo_uri
+    `SELECT ps.*, s.name, s.size, s.category, s.photo_uri, s.cost_per_unit_cents
      FROM project_supplies ps JOIN supplies s ON s.id = ps.supply_id
      WHERE ps.project_id = ? ORDER BY s.name COLLATE NOCASE`,
     [projectId],
@@ -388,4 +390,110 @@ export function projectsUsingGlass(db: QueryDb, glassId: string): Promise<{ id: 
      WHERE pg.glass_item_id = ? ORDER BY p.updated_at DESC`,
     [glassId],
   );
+}
+
+// ---------- make this again ----------
+
+export type RepeatLine = {
+  label: string;
+  /** "2 × 12×12", "Cut from a 12×12", "4 oz". */
+  need: string;
+  /** "you have 5". */
+  have: string;
+  /** How many more pieces this line alone allows. */
+  times: number;
+  /** A sheet she cut from: not taken now; she cuts it when she gets there. */
+  cut: boolean;
+};
+
+export type RepeatPlan = { lines: RepeatLine[]; canMake: number };
+
+/** What it takes to make a project again, and how many more she has materials for. */
+export async function planRepeat(db: QueryDb, projectId: string): Promise<RepeatPlan> {
+  const lines: RepeatLine[] = [];
+  for (const g of await listProjectGlass(db, projectId)) {
+    const glass = await getGlass(db, g.glass_item_id);
+    const label = [glass?.manufacturer, g.color_name].filter(Boolean).join(' ');
+    if (g.width_in !== null && g.height_in !== null) {
+      const count = (await listGlassSizes(db, g.glass_item_id)).find((s) => s.width === g.width_in && s.height === g.height_in)?.count ?? 0;
+      const need = g.partial ? 1 : g.quantity;
+      lines.push({
+        label,
+        need: g.partial ? `Cut from a ${sizeLabel(g.width_in, g.height_in)}` : `${g.quantity} × ${sizeLabel(g.width_in, g.height_in)}`,
+        have: `you have ${count}`,
+        times: Math.floor(count / need),
+        cut: g.partial === 1,
+      });
+    } else {
+      const have = glass?.quantity ?? 0;
+      lines.push({
+        label,
+        need: formatQuantity(g.quantity, g.unit),
+        have: `you have ${formatQuantity(have, g.unit)}`,
+        times: g.quantity > 0 ? Math.floor(have / g.quantity + 1e-9) : 0,
+        cut: false,
+      });
+    }
+  }
+  for (const s of await listProjectSupplies(db, projectId)) {
+    const supply = await getSupply(db, s.supply_id);
+    const have = supply?.quantity ?? 0;
+    lines.push({
+      label: s.name,
+      need: formatQuantity(s.quantity, s.unit),
+      have: `you have ${formatQuantity(have, s.unit)}`,
+      times: s.quantity > 0 ? Math.floor(have / s.quantity + 1e-9) : 0,
+      cut: false,
+    });
+  }
+  const canMake = lines.length === 0 ? 0 : Math.min(...lines.map((l) => l.times));
+  return { lines, canMake };
+}
+
+/** "Sunflower" → "Sunflower #2", and "Sunflower #2" → "Sunflower #3", counting what already exists. */
+async function nextCopyName(db: QueryDb, name: string): Promise<string> {
+  const base = name.replace(/\s+#\d+$/, '');
+  const rows = await db.getAllAsync<{ name: string }>('SELECT name FROM projects WHERE name = ? OR name LIKE ?', [base, `${base} #%`]);
+  const used = rows.map((r) => (r.name === base ? 1 : Number(r.name.slice(base.length + 2)) || 0));
+  return `${base} #${Math.max(1, ...used) + 1}`;
+}
+
+export type RepeatResult = { ok: true; id: string } | { ok: false; message: string };
+
+/**
+ * Starts a new project like this one and takes the same glass and supplies out of inventory.
+ * Sheets she cut from aren't taken: the new project's notes list them, and she cuts them with
+ * "Use glass → Part of a sheet" when she gets there, choosing what's left.
+ */
+export async function makeAgain(db: QueryDb, projectId: string): Promise<RepeatResult> {
+  const project = await getProject(db, projectId);
+  if (!project) return { ok: false, message: "That project isn't here anymore." };
+  const plan = await planRepeat(db, projectId);
+  const short = plan.lines.filter((l) => l.times < 1);
+  if (short.length > 0) return { ok: false, message: `Not enough ${short.map((l) => l.label).join(', ')}.` };
+
+  const glassLines = await listProjectGlass(db, projectId);
+  const cuts = glassLines.filter((g) => g.partial && g.width_in !== null && g.height_in !== null);
+  const toCut = cuts.map((g) => `• ${g.color_name}, from a ${sizeLabel(g.width_in!, g.height_in!)}`);
+  const notes = [project.notes, toCut.length > 0 ? `Still to cut:\n${toCut.join('\n')}` : null].filter(Boolean).join('\n\n') || null;
+
+  const id = await createProject(db, { name: await nextCopyName(db, project.name), kind: project.kind, notes });
+  for (const g of glassLines) {
+    if (g.partial) continue;
+    const amount: UseAmount =
+      g.width_in !== null && g.height_in !== null ? { size: { width: g.width_in, height: g.height_in }, count: g.quantity } : { quantity: g.quantity };
+    const r = await takeGlass(db, id, g.glass_item_id, amount);
+    if (!r.ok) return undoCopy(db, id, r.message);
+  }
+  for (const s of await listProjectSupplies(db, projectId)) {
+    const r = await takeSupply(db, id, s.supply_id, s.quantity);
+    if (!r.ok) return undoCopy(db, id, r.message);
+  }
+  return { ok: true, id };
+}
+
+/** If anything ran short partway, put back what was taken and remove the half-made copy. */
+async function undoCopy(db: QueryDb, id: string, message: string): Promise<RepeatResult> {
+  await deleteProject(db, id, true);
+  return { ok: false, message };
 }

@@ -1,15 +1,17 @@
 import Constants from 'expo-constants';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SyncSection } from '@/components/SyncSection';
 import { Button, Column, Field } from '@/components/ui';
 import { SETTING, countEverything, getPricing, getSetting, setSetting } from '@/db/settingsRepo';
 import { parseMoney } from '@/domain/costing';
 import { describeLastBackup } from '@/domain/backupFormat';
 import { backupsSupported, restoreBackup, shareBackup } from '@/lib/backup';
+import { dataChanged, onDataChanged } from '@/lib/dataChanged';
 import { space, type, useColors } from '@/theme/theme';
 
 type Counts = Awaited<ReturnType<typeof countEverything>>;
@@ -34,6 +36,8 @@ export default function SettingsScreen() {
       load();
     }, [load]),
   );
+  // Counts change when her other device sends something.
+  useEffect(() => onDataChanged(() => void load()), [load]);
 
   const save = async () => {
     setMessage(null);
@@ -70,7 +74,11 @@ export default function SettingsScreen() {
           <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
             Settings
           </Text>
-          <Section title="Keep your work safe">
+          <Section title={`Your iPhone and iPad`}>
+          <SyncSection />
+        </Section>
+
+        <Section title="Keep your work safe">
             <Text style={[styles.body, { color: c.text }]}>
               A backup is one file with everything in it: glass, supplies, projects and photos. Save it to iCloud Drive (“Save to Files”) or send it
               to Taylor. If this {deviceWord()} is ever lost or replaced, the backup brings it all back.
@@ -146,15 +154,20 @@ function PricingSection() {
   const [markup, setMarkup] = useState('');
   const [saved, setSaved] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ rate?: string; markup?: string }>({});
+  // True while she has typed something not yet saved, so a change from her other
+  // device doesn't overwrite what she's in the middle of.
+  const editing = useRef(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      getPricing(db).then((p) => {
-        setRate(p.hourlyCents === null ? '' : String(p.hourlyCents / 100));
-        setMarkup(p.markupPercent === null ? '' : String(p.markupPercent));
-      });
-    }, [db]),
-  );
+  const load = useCallback(() => {
+    getPricing(db).then((p) => {
+      if (editing.current) return;
+      setRate(p.hourlyCents === null ? '' : String(p.hourlyCents / 100));
+      setMarkup(p.markupPercent === null ? '' : String(p.markupPercent));
+    });
+  }, [db]);
+
+  useFocusEffect(load);
+  useEffect(() => onDataChanged(load), [load]);
 
   const save = async () => {
     const r = parseMoney(rate);
@@ -166,7 +179,9 @@ function PricingSection() {
     if (Object.keys(next).length > 0) return;
     await setSetting(db, SETTING.hourlyRateCents, r === null || r === undefined ? '' : String(r));
     await setSetting(db, SETTING.markupPercent, m === null ? '' : String(m));
+    editing.current = false;
     setSaved('Saved. Projects use these now.');
+    dataChanged();
   };
 
   return (
@@ -179,6 +194,7 @@ function PricingSection() {
         value={rate}
         onChangeText={(t) => {
           setRate(t);
+          editing.current = true;
           setSaved(null);
         }}
         error={errors.rate}
@@ -191,6 +207,7 @@ function PricingSection() {
         value={markup}
         onChangeText={(t) => {
           setMarkup(t);
+          editing.current = true;
           setSaved(null);
         }}
         error={errors.markup}

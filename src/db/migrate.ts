@@ -4,7 +4,7 @@ import { LATEST_VERSION } from './migrations';
 import { runMigrations } from './runMigrations';
 import { snapshotDatabase } from './snapshot';
 
-export const DATABASE_NAME = 'glass-studio.db';
+export { databaseName } from './dbName';
 
 /** Passed to SQLiteProvider's onInit, so it runs before any screen renders. */
 export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {

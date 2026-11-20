@@ -8,6 +8,7 @@ import { countLowGlass } from '@/db/glassRepo';
 import { SETTING, countEverything, getSetting, setSetting } from '@/db/settingsRepo';
 import { countOpenShopping } from '@/db/shoppingRepo';
 import { snapshotDatabase } from '@/db/snapshot';
+import { startSync } from '@/lib/sync/manager';
 import { countLowSupplies } from '@/db/suppliesRepo';
 import { onShoppingChanged } from '@/lib/shoppingCount';
 import { type, useColors } from '@/theme/theme';
@@ -89,6 +90,7 @@ const WEEK = 7 * 86_400_000;
 function useOnLaunch() {
   const db = useSQLiteContext();
   useEffect(() => {
+    startSync(db);
     (async () => {
       const [seen, lastSnapshot, counts] = await Promise.all([
         getSetting(db, SETTING.welcomeSeen),

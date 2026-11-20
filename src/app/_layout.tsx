@@ -4,13 +4,17 @@ import { StatusBar } from 'expo-status-bar';
 
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { UndoProvider } from '@/components/Undo';
-import { DATABASE_NAME, migrateDbIfNeeded } from '@/db/migrate';
+import { databaseName, migrateDbIfNeeded } from '@/db/migrate';
+
 import { type, useColors } from '@/theme/theme';
+
+// Read once at startup: on the web preview it can depend on the address, which changes as she moves around.
+const DB_NAME = databaseName();
 
 export default function RootLayout() {
   const c = useColors();
   return (
-    <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded}>
+    <SQLiteProvider databaseName={DB_NAME} onInit={migrateDbIfNeeded}>
       <StatusBar style="auto" />
       <UndoProvider>
       <Stack

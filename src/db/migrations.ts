@@ -289,6 +289,173 @@ ALTER TABLE glass_items ADD COLUMN min_quantity REAL;
 ALTER TABLE project_glass ADD COLUMN partial INTEGER NOT NULL DEFAULT 0 CHECK (partial IN (0, 1));
 `,
   },
+  {
+    // Sync between her iPhone and iPad. Every change to a synced table is noted in
+    // sync_outbox by a trigger, so no save path can forget to sync. Changes that arrive
+    // from the other device are applied with sync_state.applying = '1', which keeps the
+    // triggers quiet so they don't bounce straight back.
+    // If a later migration rebuilds one of these tables, it must recreate its triggers.
+    // (The triggers use ON CONFLICT DO UPDATE rather than INSERT OR REPLACE: SQLite lets the
+    // statement that fired a trigger override OR REPLACE inside it, but not an upsert.)
+    version: 10,
+    sql: `
+CREATE TABLE sync_outbox (
+  tbl TEXT NOT NULL,
+  row_id TEXT NOT NULL,
+  changed_at TEXT NOT NULL,
+  PRIMARY KEY (tbl, row_id)
+);
+CREATE TABLE sync_state (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL
+);
+CREATE TABLE sync_photos (
+  name TEXT PRIMARY KEY NOT NULL,
+  uploaded_at TEXT NOT NULL
+);
+CREATE TABLE sync_retry (
+  doc_key TEXT PRIMARY KEY NOT NULL,
+  doc TEXT NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0
+);
+INSERT INTO sync_state (key, value) VALUES ('applying', '0');
+CREATE TRIGGER sync_glass_items_insert AFTER INSERT ON glass_items WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('glass_items', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_glass_items_update AFTER UPDATE ON glass_items WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('glass_items', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_glass_items_delete AFTER DELETE ON glass_items WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('glass_items', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_supplies_insert AFTER INSERT ON supplies WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('supplies', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_supplies_update AFTER UPDATE ON supplies WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('supplies', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_supplies_delete AFTER DELETE ON supplies WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('supplies', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_projects_insert AFTER INSERT ON projects WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('projects', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_projects_update AFTER UPDATE ON projects WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('projects', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_projects_delete AFTER DELETE ON projects WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('projects', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_glass_pieces_insert AFTER INSERT ON glass_pieces WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('glass_pieces', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_glass_pieces_update AFTER UPDATE ON glass_pieces WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('glass_pieces', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_glass_pieces_delete AFTER DELETE ON glass_pieces WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('glass_pieces', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_project_glass_insert AFTER INSERT ON project_glass WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('project_glass', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_project_glass_update AFTER UPDATE ON project_glass WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('project_glass', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_project_glass_delete AFTER DELETE ON project_glass WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('project_glass', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_project_supplies_insert AFTER INSERT ON project_supplies WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('project_supplies', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_project_supplies_update AFTER UPDATE ON project_supplies WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('project_supplies', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_project_supplies_delete AFTER DELETE ON project_supplies WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('project_supplies', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_photos_insert AFTER INSERT ON photos WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('photos', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_photos_update AFTER UPDATE ON photos WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('photos', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_photos_delete AFTER DELETE ON photos WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('photos', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_shopping_items_insert AFTER INSERT ON shopping_items WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('shopping_items', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_shopping_items_update AFTER UPDATE ON shopping_items WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('shopping_items', NEW.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_shopping_items_delete AFTER DELETE ON shopping_items WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0'
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('shopping_items', OLD.id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_settings_insert AFTER INSERT ON settings WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0' AND NEW.key IN ('hourly_rate_cents', 'markup_percent')
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('settings', NEW.key, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_settings_update AFTER UPDATE ON settings WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0' AND NEW.key IN ('hourly_rate_cents', 'markup_percent')
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('settings', NEW.key, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+CREATE TRIGGER sync_settings_delete AFTER DELETE ON settings WHEN (SELECT value FROM sync_state WHERE key = 'applying') = '0' AND OLD.key IN ('hourly_rate_cents', 'markup_percent')
+BEGIN
+  INSERT INTO sync_outbox (tbl, row_id, changed_at) VALUES ('settings', OLD.key, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    ON CONFLICT (tbl, row_id) DO UPDATE SET changed_at = excluded.changed_at;
+END;
+`,
+  },
 ];
 
 export const LATEST_VERSION = migrations[migrations.length - 1].version;

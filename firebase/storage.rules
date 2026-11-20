@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Photos live at users/{their sign-in id}/photos/{file}. Only that person can see,
+// add or remove them, and only images under 25 MB can be uploaded.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/photos/{name} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 25 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

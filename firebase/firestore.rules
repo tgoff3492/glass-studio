@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Katharos keeps each person's records under users/{their sign-in id}.
+// Only that signed-in person can read or change them; everything else is closed.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SyncSection } from '@/components/SyncSection';
 import { Button, Column, Field } from '@/components/ui';
 import { SETTING, countEverything, getPricing, getSetting, setSetting } from '@/db/settingsRepo';
 import { parseMoney } from '@/domain/costing';
@@ -70,7 +71,11 @@ export default function SettingsScreen() {
           <Text style={[styles.title, { color: c.text }]} accessibilityRole="header">
             Settings
           </Text>
-          <Section title="Keep your work safe">
+          <Section title={`Your iPhone and iPad`}>
+          <SyncSection />
+        </Section>
+
+        <Section title="Keep your work safe">
             <Text style={[styles.body, { color: c.text }]}>
               A backup is one file with everything in it: glass, supplies, projects and photos. Save it to iCloud Drive (“Save to Files”) or send it
               to Taylor. If this {deviceWord()} is ever lost or replaced, the backup brings it all back.

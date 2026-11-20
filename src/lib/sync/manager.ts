@@ -96,7 +96,17 @@ export function startSync(database: SQLiteDatabase): void {
   });
   // Local changes: send them shortly after, so a burst of taps goes up together.
   onDataChanged(() => schedulePush());
-  setInterval(() => schedulePush(0), 30_000);
+  // Most screens save without announcing it, so look for waiting changes every few
+  // seconds (a cheap count) and send them. Photos are caught up on the slower round.
+  setInterval(() => {
+    if (!db || !user || pushing || pushTimer) return;
+    pendingCount(db)
+      .then((n) => {
+        if (n > 0) schedulePush(0);
+      })
+      .catch(() => {});
+  }, 5_000);
+  setInterval(() => schedulePush(0), 60_000);
   AppState.addEventListener('change', (s) => {
     if (s === 'active' && user) {
       startLive();
